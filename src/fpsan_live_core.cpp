@@ -2065,17 +2065,21 @@ int main(int argc, char** argv) {
     printf("  [BOOT] Cognitive clock: %d Hz (target)\n", 1000000 / TICK_INTERVAL_US);
     set_color(COL_RESET);
 
-    // Dynamic Boot greeting (with voice)
+    // Dynamic boot greeting (with voice). Seed from graph vocabulary — not the
+    // operator's name — so public builds do not assume a specific user.
     char greeting_buf[1024] = {0};
-    int seed_cid = find_word("Krishna");
+    int seed_cid = find_word("Engram");
+    if (seed_cid < 0) seed_cid = find_word("Core");
     if (seed_cid >= 0 && g_cortex->clusters[seed_cid].active) {
         g_graph->clear_activation();
         int words = g_lexer.generate_text(seed_cid, g_graph, g_cortex, greeting_buf, 15);
         if (words == 0) {
-            snprintf(greeting_buf, sizeof(greeting_buf), "Hello Krishna. Engram Core is online and ready.");
+            snprintf(greeting_buf, sizeof(greeting_buf),
+                     "Engram Core is online and ready.");
         }
     } else {
-        snprintf(greeting_buf, sizeof(greeting_buf), "Hello Krishna. I am online. Please teach me.");
+        snprintf(greeting_buf, sizeof(greeting_buf),
+                 "Engram Core is online. Teach me a fact to get started.");
     }
     jarvis_say(greeting_buf);
 
