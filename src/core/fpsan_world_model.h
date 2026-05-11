@@ -1,7 +1,7 @@
 #pragma once
 // ============================================================
 // Research program R3 — Graph-walked one-step transition prior
-// Predicts next cluster from EDGE_CAUSES / EDGE_TEMPORAL only (no transformers).
+// Predicts next cluster from EDGE_CAUSES / EDGE_TEMPORAL only (graph prior; no attention-stack models).
 // ============================================================
 
 #include "cluster_graph.h"
