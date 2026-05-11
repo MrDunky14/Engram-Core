@@ -19,7 +19,7 @@ FP-SAN (Fixed-Point Spiking Asynchronous Network) powers **Engram Core** — a b
 | **OS** | **Windows 10 / Windows 11** (x64 only). **No POSIX / Linux / macOS support in v1.** |
 | **CPU** | x86_64. **AVX2 recommended** for performance on parallel-friendly paths. |
 | **RAM** | **8 GB minimum** (official supported floor). |
-| **Storage** | **< 100 MB** typical for toolchain-built daemon + Wasm gate fixtures (excludes `.fpsan` brain files and user `artefacts/` growth). |
+| **Storage** | **< 100 MB** typical for toolchain-built daemon + Wasm gate fixtures (excludes `.fpsan` brain files and user `artefacts/` growth). Large optional datasets (`conceptnet` dump, full MNIST stream) are **not** in Git—see [`data/README.md`](data/README.md). |
 | **Runtime** | **UI Automation (UIA)** for structured screen reading; **SAPI** (Windows Speech API / TTS). Both ship with Windows; no separate installer from this repo for those subsystems. |
 
 **Portability:** Native **Windows x64** binaries only from `run_engram.bat` / MSVC. Cross-compilation is not part of v1.
