@@ -58,7 +58,7 @@ cd Engram-Core
 .\run_engram.bat
 ```
 
-Use **`/help`** and **`/status`** in the REPL. Full command reference: [`docs/COMMANDS.md`](docs/COMMANDS.md).
+Use **`/help`** and **`/status`** in the REPL. Full command reference: [`docs/COMMANDS.md`](docs/COMMANDS.md). On-camera prep (B1 receipt + step card): **`scripts\demo_impossible_sequence.bat`**.
 
 **2. Run B1 (retention gauntlet) and R6 matrix**
 

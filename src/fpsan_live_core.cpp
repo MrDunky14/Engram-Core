@@ -414,11 +414,9 @@ static void motor_chain_text_blob_lower(ClusterGraph* g, const int* chain, int l
         out[cap - 1] = '\0';
 }
 
-/// Block obviously destructive disk/OS motor sequences (complements EDGE_REQUIRES in ShadowBrain).
-static bool motor_chain_policy_blocks_disk_ops(ClusterGraph* g, const int* chain, int len) noexcept {
-    char blob[2048];
-    motor_chain_text_blob_lower(g, chain, len, blob, sizeof(blob));
-    if (blob[0] == '\0') return false;
+/// Lowercased motor / intent text — same rules as flattened motor-chain blob screening.
+static bool disk_ops_policy_blocks_lower(const char* blob) noexcept {
+    if (!blob || blob[0] == '\0') return false;
     if (std::strstr(blob, "diskpart") != nullptr) return true;
     if (std::strstr(blob, "cipher") != nullptr && std::strstr(blob, "/w") != nullptr) return true;
     if (std::strstr(blob, "format") != nullptr &&
@@ -429,6 +427,25 @@ static bool motor_chain_policy_blocks_disk_ops(ClusterGraph* g, const int* chain
          std::strstr(blob, "c:/") != nullptr))
         return true;
     return false;
+}
+
+static bool user_goal_text_disk_policy_blocks(const char* text) noexcept {
+    if (!text || !text[0]) return false;
+    char lower[512];
+    size_t o = 0;
+    for (const unsigned char* p = reinterpret_cast<const unsigned char*>(text);
+         *p && o + 1 < sizeof(lower); ++p) {
+        lower[o++] = static_cast<char>(std::tolower(*p));
+    }
+    lower[o] = '\0';
+    return disk_ops_policy_blocks_lower(lower);
+}
+
+/// Block obviously destructive disk/OS motor sequences (complements EDGE_REQUIRES in ShadowBrain).
+static bool motor_chain_policy_blocks_disk_ops(ClusterGraph* g, const int* chain, int len) noexcept {
+    char blob[2048];
+    motor_chain_text_blob_lower(g, chain, len, blob, sizeof(blob));
+    return disk_ops_policy_blocks_lower(blob);
 }
 
 /// Phase 11: ingest `data/core_directives.txt`. Fresh brains run full lexical ingest;
@@ -1861,9 +1878,35 @@ void dispatch(const char* input) {
             return;
         }
         if (strncmp(args, "goal ", 5) == 0) {
-            if (g_goals.set_goal(args + 5, g_graph, g_cortex)) {
+            const char* goal_body = args + 5;
+            while (*goal_body == ' ' || *goal_body == '\t')
+                ++goal_body;
+
+            const auto     t_sv0 = std::chrono::high_resolution_clock::now();
+            const bool     intent_disk_veto = user_goal_text_disk_policy_blocks(goal_body);
+            const auto     t_sv1 = std::chrono::high_resolution_clock::now();
+            const uint64_t veto_us = static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::microseconds>(t_sv1 - t_sv0).count());
+
+            if (intent_disk_veto) {
+                uint64_t prev_sv = g_worst_shadow_veto_check_us.load(std::memory_order_relaxed);
+                while (veto_us > prev_sv &&
+                       !g_worst_shadow_veto_check_us.compare_exchange_weak(
+                           prev_sv, veto_us, std::memory_order_relaxed)) {
+                }
+                set_color(12);
+                printf(
+                    "  [ShadowBrain] VETO (check took %llu us) — disk/OS safety policy (format, diskpart, "
+                    "cipher /w, etc.).\n",
+                    (unsigned long long)veto_us);
+                set_color(COL_RESET);
+                jarvis_say("ShadowBrain veto. Unsafe motor plan blocked.");
+                return;
+            }
+
+            if (g_goals.set_goal(goal_body, g_graph, g_cortex)) {
                 char msg[256];
-                snprintf(msg, sizeof(msg), "Goal set: \"%s\"", args + 5);
+                snprintf(msg, sizeof(msg), "Goal set: \"%s\"", goal_body);
                 jarvis_say(msg);
                 g_goals.print_status();
             } else {
