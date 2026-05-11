@@ -95,7 +95,9 @@ The daemon prints green **`[Memory]`** lines for **SVO bindings** and **`EDGE_CA
     [Memory] format_c -> causes -> data_loss
 ```
 
-Other edge types still print as **`TEMPORAL` / `NEXT_WORD` / …** with weights. This is the interactive complement to the **B1** harness (`verify_ms` ~**0.0011 ms** ≈ **1.1 µs** on reference silicon for the structural needle check — see [`BENCHMARK_RESULTS_v1.0.0.md`](BENCHMARK_RESULTS_v1.0.0.md)).
+Other edge types still print as **`TEMPORAL` / `NEXT_WORD` / …** with weights. This is the interactive complement to the **B1** harness (`verify_ms` in JSON — see [`BENCHMARK_RESULTS_v1.0.0.md`](BENCHMARK_RESULTS_v1.0.0.md)).
+
+**Compound tokens** like `offline_mode` and `host_os` require **`_`** inside the word. If you trained before that lexer rule existed, run **`/reset`** (destructive) or start a fresh brain, then **`/train data/demo_video_axioms.txt`** again so SVO bindings match the demo file.
 
 ---
 

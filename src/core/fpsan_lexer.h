@@ -286,8 +286,9 @@ struct NativeLexer {
             while (i < len && isspace((unsigned char)sentence[i])) i++;
             if (i >= len) break;
 
-            // Handle punctuation
-            if (ispunct((unsigned char)sentence[i]) && sentence[i] != '\'' && sentence[i] != '-') {
+            const unsigned char c0 = static_cast<unsigned char>(sentence[i]);
+            // Single-char punctuation (never split identifiers: '_' '\'' '-' stay inside words)
+            if (ispunct(c0) && c0 != '\'' && c0 != '-' && c0 != '_') {
                 out_tokens[count].text[0] = sentence[i];
                 out_tokens[count].text[1] = '\0';
                 out_tokens[count].tag = POS_PUNCT;
@@ -297,12 +298,23 @@ struct NativeLexer {
                 continue;
             }
 
-            // Extract word
-            int ws = 0;
-            while (i < len && !isspace((unsigned char)sentence[i]) &&
-                   !(ispunct((unsigned char)sentence[i]) && sentence[i] != '\'' && sentence[i] != '-') &&
-                   ws < 63) {
-                out_tokens[count].text[ws++] = sentence[i++];
+            // Extract word (alnum + underscore + in-word apostrophe/hyphen)
+            int                ws = 0;
+            while (i < len && ws < 63) {
+                const unsigned char c = static_cast<unsigned char>(sentence[i]);
+                if (isspace(c)) break;
+                if (isalnum(c) || c == '_' || c == '\'' || c == '-') {
+                    out_tokens[count].text[ws++] = sentence[i++];
+                } else
+                    break;
+            }
+            if (ws == 0) {
+                out_tokens[count].text[0] = sentence[i++];
+                out_tokens[count].text[1] = '\0';
+                out_tokens[count].tag      = POS_PUNCT;
+                out_tokens[count].cluster_id = -1;
+                count++;
+                continue;
             }
             out_tokens[count].text[ws] = '\0';
 
