@@ -1,0 +1,164 @@
+HumanEval_0,"Check if in given list of numbers, are any two num"
+HumanEval_1,Input to this function is a string containing mult
+HumanEval_2,"Given a positive floating point number, it can be "
+HumanEval_3,You're given a list of deposit and withdrawal oper
+HumanEval_4,"For a given list of input numbers, calculate Mean "
+HumanEval_5,Insert a number 'delimeter' between every two cons
+HumanEval_6,Input to this function is a string represented mul
+HumanEval_7,Filter an input list of strings only for ones that
+HumanEval_8,"For a given list of integers, return a tuple consi"
+HumanEval_9,"From a given list of integers, generate a list of "
+HumanEval_10,Test if given string is a palindrome
+HumanEval_11,Input are two strings a and b consisting only of 1
+HumanEval_12,"Out of list of strings, return the longest one. Re"
+HumanEval_13,Return a greatest common divisor of two integers a
+HumanEval_14,Return list of all prefixes from shortest to longe
+HumanEval_15,Return a string containing space-delimited numbers
+HumanEval_16,"Given a string, find out how many distinct charact"
+HumanEval_17,Input to this function is a string representing mu
+HumanEval_18,Find how many times a given substring can be found
+HumanEval_19,Input is a space-delimited string of numberals fro
+HumanEval_20,From a supplied list of numbers (of length at leas
+HumanEval_21,"Given list of numbers (of at least two elements), "
+HumanEval_22,Filter given list of any python values only for in
+HumanEval_23,Return length of given string     >>> strlen('')  
+HumanEval_24,"For a given number n, find the largest number that"
+HumanEval_25,Return list of prime factors of given integer in t
+HumanEval_26,"From a list of integers, remove all elements that "
+HumanEval_27,"For a given string, flip lowercase characters to u"
+HumanEval_28,Concatenate list of strings into a single string  
+HumanEval_29,Filter an input list of strings only for ones that
+HumanEval_30,Return only positive numbers in the list.     >>> 
+HumanEval_31,"Return true if a given number is prime, and false "
+HumanEval_32,Evaluates polynomial with coefficients xs at point
+HumanEval_33,This function takes a list l and returns a list l'
+HumanEval_34,Return sorted unique elements in a list     >>> un
+HumanEval_35,Return maximum element in the list.     >>> max_el
+HumanEval_36,Return the number of times the digit 7 appears in 
+HumanEval_37,This function takes a list l and returns a list l'
+HumanEval_38,returns encoded string by cycling groups of three 
+HumanEval_39,prime_fib returns n-th number that is a Fibonacci 
+HumanEval_40,triples_sum_to_zero takes a list of integers as an
+HumanEval_41,Imagine a road that's a perfectly straight infinit
+HumanEval_42,Return list with elements incremented by 1.     >>
+HumanEval_43,pairs_sum_to_zero takes a list of integers as an i
+HumanEval_44,Change numerical base of input number x to base.  
+HumanEval_45,Given length of a side and high return area for a 
+HumanEval_46,The Fib4 number sequence is a sequence similar to 
+HumanEval_47,Return median of elements in the list l.     >>> m
+HumanEval_48,Checks if given string is a palindrome     >>> is_
+HumanEval_49,Return 2^n modulo p (be aware of numerics).     >>
+HumanEval_50,returns encoded string by shifting every character
+HumanEval_51,remove_vowels is a function that takes string and 
+HumanEval_52,Return True if all numbers in the list l are below
+HumanEval_53,"Add two numbers x and y     >>> add(2, 3)     5   "
+HumanEval_54,Check if two words have the same characters.     >
+HumanEval_55,Return n-th Fibonacci number.     >>> fib(10)     
+HumanEval_56,"brackets is a string of ""<"" and "">"".     return Tr"
+HumanEval_57,Return True is list elements are monotonically inc
+HumanEval_58,Return sorted unique common elements for two lists
+HumanEval_59,Return the largest prime factor of n. Assume n > 1
+HumanEval_60,sum_to_n is a function that sums numbers from 1 to
+HumanEval_61,"brackets is a string of ""("" and "")"".     return Tr"
+HumanEval_62,xs represent coefficients of a polynomial.     xs[
+HumanEval_63,The FibFib number sequence is a sequence similar t
+HumanEval_64,Add more test cases.
+HumanEval_65,"Circular shift the digits of the integer x, shift "
+HumanEval_66,Task     Write a function that takes a string as i
+HumanEval_67,"In this task, you will be given a string that repr"
+HumanEval_68,"""Given an array representing a branch of a tree th"
+HumanEval_69,solve HumanEval_69
+HumanEval_70,solve HumanEval_70
+HumanEval_71,solve HumanEval_71
+HumanEval_72,solve HumanEval_72
+HumanEval_73,"Given an array arr of integers, find the minimum n"
+HumanEval_74,solve HumanEval_74
+HumanEval_75,Write a function that returns true if the given nu
+HumanEval_76,Your task is to write a function that returns true
+HumanEval_77,solve HumanEval_77
+HumanEval_78,You have been tasked to write a function that rece
+HumanEval_79,You will be given a number in decimal form and you
+HumanEval_80,You are given a string s.     Your task is to chec
+HumanEval_81,It is the last week of the semester and the teache
+HumanEval_82,Write a function that takes a string and returns T
+HumanEval_83,"Given a positive integer n, return the count of th"
+HumanEval_84,"Given a positive integer N, return the total sum o"
+HumanEval_85,Given a non-empty list of integers lst. add the ev
+HumanEval_86,Write a function that takes a string and returns a
+HumanEval_87,"You are given a 2 dimensional data, as a nested li"
+HumanEval_88,"Given an array of non-negative integers, return a "
+HumanEval_89,Create a function encrypt that takes a string as a
+HumanEval_90,You are given a list of integers.     Write a func
+HumanEval_91,"You'll be given a string of words, and your task i"
+HumanEval_92,solve HumanEval_92
+HumanEval_93,"Write a function that takes a message, and encodes"
+HumanEval_94,You are given a list of integers.     You need to 
+HumanEval_95,"Given a dictionary, return True if all keys are st"
+HumanEval_96,Implement a function that takes an non-negative in
+HumanEval_97,Complete the function that takes two integers and 
+HumanEval_98,"Given a string s, count the number of uppercase vo"
+HumanEval_99,solve HumanEval_99
+HumanEval_100,"Given a positive integer n, you have to make a pil"
+HumanEval_101,You will be given a string of words separated by c
+HumanEval_102,This function takes two positive numbers x and y a
+HumanEval_103,"You are given two positive integers n and m, and y"
+HumanEval_104,Given a list of positive integers x. return a sort
+HumanEval_105,"Given an array of integers, sort the integers that"
+HumanEval_106,Implement the function f that takes n as a paramet
+HumanEval_107,"Given a positive integer n, return a tuple that ha"
+HumanEval_108,Write a function count_nums which takes an array o
+HumanEval_109,"We have an array 'arr' of N integers arr[1], arr[2"
+HumanEval_110,"In this problem, you will implement a function tha"
+HumanEval_111,Given a string representing a space separated lowe
+HumanEval_112,"Task     We are given two strings s and c, you hav"
+HumanEval_113,"Given a list of strings, where each string consist"
+HumanEval_114,"Given an array of integers nums, find the minimum "
+HumanEval_115,You are given a rectangular grid of wells. Each ro
+HumanEval_116,"In this Kata, you have to sort an array of non-neg"
+HumanEval_117,"Given a string s and a natural number n, you have "
+HumanEval_118,You are given a word. Your task is to find the clo
+HumanEval_119,solve HumanEval_119
+HumanEval_120,Given an array arr of integers and a positive inte
+HumanEval_121,"Given a non-empty list of integers, return the sum"
+HumanEval_122,Given a non-empty array of integers arr and an int
+HumanEval_123,"Given a positive integer n, return a sorted list t"
+HumanEval_124,You have to write a function which validates a giv
+HumanEval_125,solve HumanEval_125
+HumanEval_126,solve HumanEval_126
+HumanEval_127,"You are given two intervals,     where each interv"
+HumanEval_128,You are given an array arr of integers and you nee
+HumanEval_129,Given a grid with N rows and N columns (N >= 2) an
+HumanEval_130,"Everyone knows Fibonacci sequence, it was studied "
+HumanEval_131,"Given a positive integer n, return the product of "
+HumanEval_132,solve HumanEval_132
+HumanEval_133,You are given a list of numbers.     You need to r
+HumanEval_134,solve HumanEval_134
+HumanEval_135,Create a function which returns the largest index 
+HumanEval_136,solve HumanEval_136
+HumanEval_137,"Create a function that takes integers, floats, or "
+HumanEval_138,Evaluate whether the given number n can be written
+HumanEval_139,The Brazilian factorial is defined as:     brazili
+HumanEval_140,"Given a string text, replace all spaces in it with"
+HumanEval_141,Create a function which takes a string representin
+HumanEval_142,"""     This function will take a list of integers. "
+HumanEval_143,"You are given a string representing a sentence,   "
+HumanEval_144,Your task is to implement a function that will sim
+HumanEval_145,Write a function which sorts the given list of int
+HumanEval_146,Write a function that takes an array of numbers as
+HumanEval_147,You are given a positive integer n. You have to cr
+HumanEval_148,solve HumanEval_148
+HumanEval_149,Write a function that accepts a list of strings as
+HumanEval_150,A simple program which should return the value of 
+HumanEval_151,solve HumanEval_151
+HumanEval_152,I think we all remember that feeling when the resu
+HumanEval_153,You will be given the name of a class (a string) a
+HumanEval_154,You are given 2 words. You need to return True if 
+HumanEval_155,Given an integer. return a tuple that has the numb
+HumanEval_156,"Given a positive integer, obtain its roman numeral"
+HumanEval_157,solve HumanEval_157
+HumanEval_158,Write a function that accepts a list of strings.  
+HumanEval_159,"You're a hungry rabbit, and you already have eaten"
+HumanEval_160,"Given two lists operator, and operand. The first l"
+HumanEval_161,"You are given a string s.     if s[i] is a letter,"
+HumanEval_162,"Given a string 'text', return its md5 hash equival"
+HumanEval_163,"Given two positive integers a and b, return the ev"

@@ -1,0 +1,131 @@
+The sun is a star at the center of the solar system.
+Earth orbits the sun at a distance of about 150 million kilometers.
+The moon orbits Earth and causes ocean tides.
+Water is made of two hydrogen atoms and one oxygen atom.
+Light travels at approximately 300000 kilometers per second.
+Gravity is a force that attracts objects with mass toward each other.
+The brain contains approximately 86 billion neurons.
+Neurons communicate through electrical signals called action potentials.
+Synapses are the junctions where neurons transmit signals to each other.
+Memory is stored as patterns of synaptic connections in the brain.
+Learning changes the strength of connections between neurons.
+DNA contains the genetic instructions for building proteins.
+Proteins are the molecular machines that perform most cellular functions.
+Evolution operates through natural selection of beneficial traits.
+Cells are the fundamental units of all living organisms.
+Photosynthesis converts sunlight into chemical energy in plants.
+The human heart beats approximately 100000 times per day.
+Blood carries oxygen from the lungs to every cell in the body.
+The immune system protects the body from harmful pathogens.
+Computers process information using binary digits called bits.
+A processor executes instructions stored in memory.
+Algorithms are step by step procedures for solving problems.
+Machine learning trains models to recognize patterns in data.
+Neural networks are computing systems inspired by biological brains.
+Artificial intelligence aims to create machines that can think.
+Deep learning uses multiple layers of neural networks.
+Transformers process sequences using attention mechanisms.
+Language models predict the next word in a sequence.
+Reinforcement learning trains agents through rewards and penalties.
+Computer vision enables machines to understand images.
+Natural language processing helps computers understand human language.
+Robotics combines mechanical engineering with artificial intelligence.
+The internet connects billions of devices worldwide.
+Encryption protects data by transforming it into unreadable code.
+Operating systems manage hardware resources and run applications.
+Programming languages allow humans to write instructions for computers.
+Python is a popular programming language for artificial intelligence.
+C and C++ are fast programming languages used for systems programming.
+Functions are reusable blocks of code that perform specific tasks.
+Variables store data values that can change during program execution.
+Mathematics is the language of science and engineering.
+Calculus studies rates of change and accumulation.
+Linear algebra deals with vectors, matrices, and linear transformations.
+Statistics analyzes data to find patterns and make predictions.
+Probability measures the likelihood of events occurring.
+Physics studies matter, energy, and their interactions.
+Chemistry studies the composition and properties of substances.
+Biology studies living organisms and their processes.
+Astronomy studies celestial objects and the universe.
+Geology studies the structure and history of the Earth.
+The universe began with the Big Bang about 14 billion years ago.
+Galaxies contain billions of stars bound together by gravity.
+Black holes are regions where gravity is so strong that nothing escapes.
+Quantum mechanics describes the behavior of particles at atomic scales.
+Relativity describes how space and time are connected.
+Energy can neither be created nor destroyed only transformed.
+Temperature measures the average kinetic energy of molecules.
+Sound travels through air as waves of pressure.
+Electricity is the flow of charged particles called electrons.
+Magnetism is a force produced by moving electric charges.
+Climate is the long term pattern of weather in a region.
+Ecosystems are communities of organisms interacting with their environment.
+Consciousness is the state of being aware of oneself and surroundings.
+Intelligence is the ability to learn, reason, and solve problems.
+Creativity is the ability to generate novel and useful ideas.
+Emotions are complex psychological states that influence behavior.
+Language is a system of symbols used for communication.
+Logic is the study of valid reasoning and argumentation.
+Philosophy explores fundamental questions about existence and knowledge.
+Ethics studies moral principles that govern human behavior.
+History records and interprets past events of human civilization.
+Democracy is a system of government by the people.
+Economics studies production distribution and consumption of goods.
+Music is organized sound that expresses ideas and emotions.
+Art is the expression of human creativity and imagination.
+Architecture designs buildings and physical structures.
+Engineering applies science to design and build useful things.
+Medicine diagnoses and treats diseases to maintain health.
+Surgery repairs the body through physical intervention.
+Genetics studies heredity and variation in living organisms.
+Nanotechnology manipulates matter at the molecular scale.
+Quantum computing uses quantum mechanical phenomena for computation.
+Renewable energy comes from sources that naturally replenish.
+Solar panels convert sunlight directly into electricity.
+Wind turbines generate electricity from the kinetic energy of wind.
+Nuclear fusion combines atomic nuclei releasing enormous energy.
+Rockets propel spacecraft by expelling mass at high velocity.
+Satellites orbit Earth and provide communication and observation.
+Telescopes collect light to observe distant objects in space.
+Microscopes magnify tiny objects invisible to the naked eye.
+Lasers produce coherent beams of light for many applications.
+Fiber optics transmit data as pulses of light through glass cables.
+Semiconductors are materials with electrical properties between conductors and insulators.
+Transistors are the fundamental building blocks of modern electronics.
+Integrated circuits contain millions of transistors on a single chip.
+Databases store and organize large collections of structured data.
+Networks connect computers to share resources and communicate.
+Cybersecurity protects systems and data from digital attacks.
+Cloud computing provides on demand access to shared computing resources.
+Virtual reality creates immersive simulated environments.
+Augmented reality overlays digital information onto the real world.
+Autonomous vehicles use sensors and AI to drive without human input.
+JARVIS is an artificial general intelligence created by Krishna.
+JARVIS learns by building a neural graph of interconnected concepts.
+JARVIS does not use transformers or statistical language models.
+JARVIS uses a neuromorphic architecture inspired by biological brains.
+JARVIS processes information through spreading activation in a cluster graph.
+JARVIS can see through screen capture and hear through voice recognition.
+JARVIS can control the computer through simulated keyboard and mouse actions.
+JARVIS has internal drives including curiosity boredom and frustration.
+JARVIS develops personality through learned associations not hardcoded responses.
+JARVIS saves its brain state to disk and resumes learning across sessions.
+Krishna is the creator and architect of the JARVIS cognitive system.
+Krishna designed the FP-SAN neuromorphic architecture from scratch.
+The FP-SAN architecture uses spiking neural dynamics with voltage decay.
+Clusters in the graph represent concepts connected by typed edges.
+Edge types include next word temporal phrase head and implemented by.
+The lexer tokenizes natural language and maps words to graph clusters.
+The motor cortex translates cognitive goals into physical computer actions.
+Metacognition allows JARVIS to evaluate its own confidence in responses.
+Homeostatic drives create an internal motivation system for autonomous behavior.
+The goal planner decomposes high level intentions into executable motor sequences.
+Spreading activation propagates energy through the graph to retrieve associations.
+Coincidence detection requires multiple inputs to arrive simultaneously to fire.
+Refractory inhibition prevents loops by temporarily suppressing recently fired nodes.
+Skip gram bonds capture longer range dependencies between non adjacent words.
+The vision system captures screen content and detects temporal changes.
+Efference copy compares expected and actual visual results of motor actions.
+Synaptic memory serializes the entire graph state for persistent storage.
+The cognitive clock runs at 1000 Hz providing millisecond level processing.
+Voltage decay simulates the natural fading of neural activation over time.

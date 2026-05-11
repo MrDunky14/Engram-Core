@@ -1,0 +1,83 @@
+# Legacy demos — local only
+archive/
+
+# ---------------------------------------------------------------------------
+# MSVC / Visual Studio (aggressive)
+# ---------------------------------------------------------------------------
+build/
+!build/.gitkeep
+*.exe
+*.obj
+*.dll
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+*.aps
+*.pch
+*.res
+*.idb
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+[Bb]in/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ii]pch/
+[Tt]emp/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.tlog/
+
+# ---------------------------------------------------------------------------
+# Run outputs & dynamic artefacts (gates, research, metamorphic)
+# ---------------------------------------------------------------------------
+artefacts/
+
+# Large or regenerable datasets (GitHub file-size limits; see data/README.md)
+data/conceptnet-assertions-*.csv.gz
+data/mnist_stream.csv
+
+# Brain / local persistence
+*.fpsan
+
+# Root-level run junk
+knowledge_mass.bin
+benchmark_*.txt
+phase*_final_results.txt
+contradictions.csv
+
+# Other binaries / bundles
+*.out
+*.app
+*.o
+*.dylib
+*.so
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.cursor/
+
+*.bak

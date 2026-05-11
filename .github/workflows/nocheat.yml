@@ -1,0 +1,36 @@
+# =============================================================
+# FP-SAN No-Cheat Grep Gate — GitHub Actions
+#
+# Runs on every push / PR that touches src/**
+# Fails the build if any hardcoded response chain, direct weight
+# assignment outside graph core, or banned symbol is detected.
+#
+# See scripts/nocheat_grep.ps1 for rule definitions.
+# =============================================================
+
+name: No-Cheat Grep Gate
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "scripts/nocheat_grep.ps1"
+      - ".github/workflows/nocheat.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "scripts/nocheat_grep.ps1"
+      - ".github/workflows/nocheat.yml"
+
+jobs:
+  nocheat:
+    name: Grep Gate (no hardcoded responses)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run No-Cheat Grep Gate
+        shell: pwsh
+        run: .\scripts\nocheat_grep.ps1
