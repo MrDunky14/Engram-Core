@@ -28,8 +28,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # v6+ aligns with current runner Node policy (see Actions changelog for Node 20→24).
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run No-Cheat Grep Gate
         shell: pwsh
