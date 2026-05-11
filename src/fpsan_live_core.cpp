@@ -876,6 +876,12 @@ void cmd_ingest(const char* sentence) {
 // COMMAND: ?word — Generate text from a specific word
 // ============================================================
 void cmd_generate(const char* word) {
+    while (word && (*word == ' ' || *word == '\t'))
+        ++word;
+    if (!word || !word[0]) {
+        printf("  Usage: ? <word>  (generate from cluster)\n");
+        return;
+    }
     int cid = find_word(word);
     if (cid < 0) {
         char msg[256];
@@ -954,6 +960,12 @@ static int binding_object_target(ClusterGraph* g, LanguageCortex* cx, int bindin
 }
 
 void cmd_query(const char* word) {
+    while (word && (*word == ' ' || *word == '\t'))
+        ++word;
+    if (!word || !word[0]) {
+        printf("  Usage: ?? <word>  (query typed associations)\n");
+        return;
+    }
     int cid = find_word(word);
     if (cid < 0) {
         char msg[256];
