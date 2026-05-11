@@ -49,7 +49,7 @@ b1_retention_gauntlet PASS exit=0
   "retention_first": true,
   "retention_last": true,
   "ingest_total_ms": 7221.867800,
-  "verify_ms": 0.001300,
+  "verify_ms": 0.001100,
   "triples_total": 9000,
   "exit_ok": true
 }

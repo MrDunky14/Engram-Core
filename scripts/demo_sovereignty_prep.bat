@@ -13,6 +13,7 @@ echo.
 echo  Start engram, then in the REPL:
 echo    /train data\demo_video_axioms.txt
 echo    /train data\b1_style_haystack_1000.txt
+echo    ?? engram
 echo    /save
 echo.
 echo  IMPORTANT:

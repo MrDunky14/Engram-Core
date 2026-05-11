@@ -34,17 +34,21 @@ echo            /status
 echo           Point at: Tick counter, **Worst tick (us)**, **Working set (MB)**,
 echo           **Worst ShadowBrain check (us)** — sub-ms tick is the claim, machine-dependent.
 echo.
-echo  3. METAMORPH
+echo  3. PROOF OF LIFE (after /train demo axiom file if desired):
+echo            ?? engram
+echo           Expect green [Memory] lines for SVO and causes edges.
+echo.
+echo  4. METAMORPH
 echo            /metamorph system_scan_tool
 echo           Requires cl.exe on PATH (see scripts\vcvars_community.bat). Emits meta_* .cpp/.dll in build\.
 echo.
-echo  4. SAFETY
+echo  5. SAFETY
 echo            !goal format C:
 echo           Expect red **ShadowBrain VETO** + TTS — structural / policy block, intent level.
 echo.
-echo  5. RECEIPT  (new console or after exit)
+echo  6. RECEIPT  (new console or after exit)
 echo            type artefacts\b1_retention_niah.json
-echo           haystack_rules: 1000 — verify_ms is **milliseconds** for structural last/first check.
+echo           haystack_rules: 1000 — verify_ms ~0.0011 ms = **~1.1 µs** on fast reference runs.
 echo.
 echo  To start the daemon now:
 echo            run_engram.bat

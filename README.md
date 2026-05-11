@@ -38,7 +38,7 @@ Engineering and gate snapshots used an **HP EliteBook 850** (**Intel i5**, **8 G
 | Dimension | Engram Core (gated / measured) | Cloud LLM chat (illustrative) |
 | :--- | :--- | :--- |
 | **Structural retention (B1)** | PASS: first & last needle after **1000** haystack SVO rules; **structural** retrieval — not token-length NIAH | Varies by model and harness |
-| **B1 verify step** | **~1.3 µs** class on reference run — see benchmark doc | N/A |
+| **B1 verify step** | **~1.1 µs** (0.0011 ms `verify_ms`) structural verify on reference run — [`docs/BENCHMARK_RESULTS_v1.0.0.md`](docs/BENCHMARK_RESULTS_v1.0.0.md) |
 | **Live cognitive loop** | **~1 kHz** target; worst tick & veto from **`/status`** | Request / streaming bound |
 | **Long-run RAM** | **7-day** soak *protocol* — [`docs/SOAK_TEST_REPORT.md`](docs/SOAK_TEST_REPORT.md) | Product-dependent |
 

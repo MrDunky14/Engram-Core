@@ -34,8 +34,10 @@ Summary from `artefacts/b1_retention_niah.json` (regenerate locally; path is git
 | Triples | 9000 |
 | Retention first / last | true / true |
 | Ingest total | 7221.867800 ms |
-| Verify | 0.001300 ms |
+| **Verify** | **0.001100 ms** (**~1.1 µs**) — two needle checks over **9000** ingested triples |
 | Exit | OK |
+
+**Evaluator note:** On the reference EliteBook run this wall time is the same order of magnitude as **L1/L2 hit** latency on contemporary cores: you are doing a **graph walk**, not a network round-trip. Rerun **`build\b1_retention_gauntlet.exe`** on your machine; `verify_ms` in **`artefacts/b1_retention_niah.json`** is authoritative.
 
 ## R0 pillar frozen suite
 

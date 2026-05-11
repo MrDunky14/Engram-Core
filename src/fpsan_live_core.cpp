@@ -919,6 +919,40 @@ void cmd_generate(const char* word) {
 // ============================================================
 // COMMAND: ??word — Query typed associations
 // ============================================================
+
+/// Nodes n with EDGE_TEMPORAL n → target_id (SVO coincidence bindings).
+static int collect_temporal_sources_to(ClusterGraph* g, int target_id, int* outs, int cap) noexcept {
+    if (!g || !outs || cap <= 0) return 0;
+    const int nc = g->node_count.load(std::memory_order_acquire);
+    int nout = 0;
+    for (int n = 0; n < nc && nout < cap; n++) {
+        int ec = g->node(n).edge_count.load(std::memory_order_acquire);
+        for (int i = 0; i < ec; i++) {
+            const Edge& e = g->node(n).edges[i];
+            if (e.type == EDGE_TEMPORAL && e.target == target_id) {
+                outs[nout++] = n;
+                break;
+            }
+        }
+    }
+    return nout;
+}
+
+/// First labeled, non-binding TEMPORAL child of an SVO binding node (object slot).
+static int binding_object_target(ClusterGraph* g, LanguageCortex* cx, int binding_id) noexcept {
+    if (!g) return -1;
+    int ec = g->node(binding_id).edge_count.load(std::memory_order_acquire);
+    for (int i = 0; i < ec; i++) {
+        const Edge& e = g->node(binding_id).edges[i];
+        if (e.type != EDGE_TEMPORAL) continue;
+        int t = e.target;
+        if (t < 0) continue;
+        if (g->node(t).is_binding_node.load(std::memory_order_acquire)) continue;
+        if (cx && cx->get_word(t)[0] != '\0') return t;
+    }
+    return -1;
+}
+
 void cmd_query(const char* word) {
     int cid = find_word(word);
     if (cid < 0) {
@@ -933,29 +967,60 @@ void cmd_query(const char* word) {
     printf("\n  Associations for \"%s\" (cluster %d):\n", word, cid);
     set_color(COL_RESET);
 
-    // Query each edge type
     const EdgeType types[] = {EDGE_IS_A, EDGE_HAS_A, EDGE_CAN_DO, EDGE_CAUSES,
-                               EDGE_NEXT_WORD, EDGE_RELATED, EDGE_TEMPORAL};
+                             EDGE_NEXT_WORD, EDGE_RELATED, EDGE_TEMPORAL};
     const int n_types = 7;
 
     bool found_any = false;
     for (int t = 0; t < n_types; t++) {
-        // Check if this node has any edges of this type
         const ClusterNode& n = g_graph->node(cid);
         int n_ec = n.edge_count.load(std::memory_order_acquire);
         for (int e = 0; e < n_ec; e++) {
-            if (n.edges[e].type == types[t]) {
-                int target = n.edges[e].target;
-                const char* target_word = g_cortex->get_word(target);
-                if (target_word[0] != '\0') {
-                    set_color(COL_YELLOW);
-                    printf("    %s", edge_type_name(types[t]));
-                    set_color(COL_DIM);
-                    printf(" -> ");
-                    set_color(COL_RESET);
-                    printf("%s (w=%.2f)\n", target_word, n.edges[e].weight);
-                    found_any = true;
+            if (n.edges[e].type != types[t]) continue;
+            int           target      = n.edges[e].target;
+            const char*   target_word = g_cortex->get_word(target);
+            const EdgeType et         = types[t];
+
+            if (et == EDGE_CAUSES && target_word[0] != '\0') {
+                set_color(10);
+                printf("    [Memory] %s -> causes -> %s (w=%.2f)\n", word, target_word, n.edges[e].weight);
+                set_color(COL_RESET);
+                found_any = true;
+                continue;
+            }
+
+            if (et == EDGE_TEMPORAL && target >= 0 &&
+                g_graph->node(target).is_binding_node.load(std::memory_order_acquire)) {
+                int         obj_id = binding_object_target(g_graph, g_cortex, target);
+                const char* obj_w  = (obj_id >= 0) ? g_cortex->get_word(obj_id) : "";
+                int         srcs[24];
+                int         nsrc = collect_temporal_sources_to(g_graph, target, srcs, 24);
+                const char* verb_w = nullptr;
+                for (int si = 0; si < nsrc; si++) {
+                    if (srcs[si] == cid) continue;
+                    const char* lw = g_cortex->get_word(srcs[si]);
+                    if (lw && lw[0] != '\0') {
+                        verb_w = lw;
+                        break;
+                    }
                 }
+                if (obj_w[0] != '\0' && verb_w) {
+                    set_color(10);
+                    printf("    [Memory] %s -> %s -> %s\n", word, verb_w, obj_w);
+                    set_color(COL_RESET);
+                    found_any = true;
+                    continue;
+                }
+            }
+
+            if (target_word[0] != '\0') {
+                set_color(COL_YELLOW);
+                printf("    %s", edge_type_name(et));
+                set_color(COL_DIM);
+                printf(" -> ");
+                set_color(COL_RESET);
+                printf("%s (w=%.2f)\n", target_word, n.edges[e].weight);
+                found_any = true;
             }
         }
     }

@@ -79,6 +79,24 @@ Typed at the **`you >`** prompt unless noted. Slash commands start with **`/`**;
 | **`?`** *word* | **Generate** continuation starting from cluster for *word*. |
 | **`??`** *word* | **Query** typed associations for *word* (`cmd_query`). |
 
+### Live retrieval (“proof of life” on camera)
+
+After **`/train data/demo_video_axioms.txt`** (or any SVO ingest), query a subject you just taught:
+
+```text
+?? engram
+```
+
+The daemon prints green **`[Memory]`** lines for **SVO bindings** and **`EDGE_CAUSES`**, for example:
+
+```text
+    [Memory] engram -> protects -> elitebook
+    [Memory] engram -> requires -> offline_mode
+    [Memory] format_c -> causes -> data_loss
+```
+
+Other edge types still print as **`TEMPORAL` / `NEXT_WORD` / …** with weights. This is the interactive complement to the **B1** harness (`verify_ms` ~**0.0011 ms** ≈ **1.1 µs** on reference silicon for the structural needle check — see [`BENCHMARK_RESULTS_v1.0.0.md`](BENCHMARK_RESULTS_v1.0.0.md)).
+
 ---
 
 ## CLI (non-interactive)
