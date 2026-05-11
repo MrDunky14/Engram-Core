@@ -23,7 +23,7 @@ Typed at the **`you >`** prompt unless noted. Slash commands start with **`/`**;
 | **`/dashboard`** | R0 pillar telemetry (tiers, edge mix, neuromod counters). |
 | **`/save`** | Saves brain via `SynapticMemory::sleep` (`engram_brain.fpsan` or legacy path). Voice line + sleep metaphor. |
 | **`/load`** | Loads brain from disk; wipes/resets if missing file. |
-| **`/train `** *file* | Ingest a single file (docs/code). |
+| **`/train `** *file* | Ingest a single file (docs/code). Blank lines and lines starting with **`#`** or **`//`** are skipped. |
 | **`/train_dir `** *dir* | Recursively ingest text/code from a directory. |
 | **`/research `** *goal* | Start **async** background research (plan + fetch pipeline). |
 | **`/research_run`** | Run next research step (local). **`/research_run `** *net* — include network fetch when implemented. |

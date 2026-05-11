@@ -996,7 +996,11 @@ void cmd_train(const char* filepath) {
     g_state = STATE_THINKING;
 
     while (std::getline(file, line)) {
-        if (line.empty()) continue;
+        size_t b = 0;
+        while (b < line.size() && std::isspace(static_cast<unsigned char>(line[b]))) b++;
+        if (b >= line.size()) continue;
+        if (line[b] == '#') continue;
+        if (line.size() >= b + 2 && line[b] == '/' && line[b + 1] == '/') continue;
 
         // Basic heuristic: lines with indentation or specific code keywords use raw ingestion
         if (line[0] == ' ' || line[0] == '\t' || 

@@ -58,7 +58,7 @@ cd Engram-Core
 .\run_engram.bat
 ```
 
-Use **`/help`** and **`/status`** in the REPL. Full command reference: [`docs/COMMANDS.md`](docs/COMMANDS.md). On-camera prep (B1 receipt + step card): **`scripts\demo_impossible_sequence.bat`**.
+Use **`/help`** and **`/status`** in the REPL. Full command reference: [`docs/COMMANDS.md`](docs/COMMANDS.md). On-camera prep (B1 receipt + step card): **`scripts\demo_impossible_sequence.bat`**. “Sovereignty” demo primers (axioms + 1000-line haystack **for `/train`**, not via the B1 exe): **`scripts\demo_sovereignty_prep.bat`** and **`data\demo_video_axioms.txt`**.
 
 **2. Run B1 (retention gauntlet) and R6 matrix**
 

@@ -200,7 +200,9 @@ struct Lexicon {
                                "want","need","use","try","ask","work","call","move",
                                "live","play","turn","put","keep","let","begin","show",
                                "seem","help","talk","read","write","learn","grow",
-                               "open","close","stop","start","kill","die","cause",nullptr};
+                               "open","close","stop","start","kill","die","cause","causes",
+                               "requires","monitors","protects","operates","destroys",
+                               "violates","compiles","creates","reads","metamorph",nullptr};
         for (int i = 0; verbs[i]; i++) insert(verbs[i], POS_VERB);
 
         // Common adjectives
@@ -511,6 +513,14 @@ struct NativeLexer {
                 int verb = tokens[phrases[p+1].head_token].cluster_id;
                 int obj  = tokens[phrases[p+2].head_token].cluster_id;
                 if (subj >= 0 && verb >= 0 && obj >= 0) {
+                    const char* vtxt = tokens[phrases[p + 1].head_token].text;
+                    // Causal SVO: "fire causes smoke" → direct EDGE_CAUSES (world-model prior)
+                    if (vtxt && strcmp(vtxt, "causes") == 0) {
+                        graph->node(subj).add_edge(obj, 2.0f, EDGE_CAUSES, PROV_USER);
+                        triples += 1;
+                        continue;
+                    }
+
                     // Create Coincidence Binding Node
                     int b_node = graph->spawn();
                     graph->node(b_node).is_binding_node.store(true, std::memory_order_release);

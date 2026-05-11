@@ -1,0 +1,22 @@
+# Demo primer — ingest inside engram with: /train data/demo_video_axioms.txt
+#
+# Honest notes:
+# - SVO lines build binding-topology (EDGE_TEMPORAL) except "causes" → EDGE_CAUSES.
+# - ShadowBrain veto for !goal format C: is still policy-based (string + motor chain), not automatic
+#   conflict detection against "protects". These axioms support narrative, ?? queries, and R3 priors.
+#
+# Phase 1 — identity / host
+engram requires offline_mode
+engram monitors host_os
+host_os operates elitebook
+engram protects elitebook
+
+# Phase 2 — causal chain (format_c matches policy token for disk safety stories)
+format_c causes data_loss
+data_loss destroys host_os
+destruction violates protection
+
+# Phase 3 — metamorph associations (metamorphic hot-load is still cl.exe + template)
+metamorph compiles cpp_payload
+cpp_payload creates system_scan_tool
+system_scan_tool reads telemetry

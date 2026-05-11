@@ -47,6 +47,7 @@ artefacts/
 # Large or regenerable datasets (GitHub file-size limits; see data/README.md)
 data/conceptnet-assertions-*.csv.gz
 data/mnist_stream.csv
+data/b1_style_haystack_1000.txt
 
 # Brain / local persistence
 *.fpsan
