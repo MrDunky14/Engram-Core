@@ -134,5 +134,5 @@ graph TD
 |--------|----------|
 | Commands & operator usage | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Long-run soak protocol | [docs/SOAK_TEST_REPORT.md](docs/SOAK_TEST_REPORT.md) |
-| Benchmark roadmap | [docs/BENCHMARK_ROADMAP.md](docs/BENCHMARK_ROADMAP.md) |
+| Docs index | [docs/README.md](docs/README.md) |
 | Optional Python dataset helpers | [tools/README.md](tools/README.md) |
