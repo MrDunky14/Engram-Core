@@ -9,7 +9,7 @@ popd
 call "%~dp0vcvars_community.bat"
 if errorlevel 1 exit /b 1
 
-cl /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS ^
+cl /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS ^
   /I "%ROOT%\src\core" /I "%ROOT%\src\benchmark" ^
   "%ROOT%\src\benchmark\phase15_gate.cpp" ^
   /Fe"%ROOT%\build\phase15_gate.exe" ^

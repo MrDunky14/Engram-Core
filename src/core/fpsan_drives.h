@@ -25,6 +25,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <string>
 
 struct HomeostaticDrives {
     // ── Drive Levels (0.0 to 1.0) ──
@@ -202,17 +203,15 @@ struct HomeostaticDrives {
 
     // Returns the most curiosity-urgent topic and pops it.
     // Call this after should_fetch_knowledge() returns true.
-    const char* pop_fetch_topic() noexcept {
-        if (unknown_word_count == 0) return nullptr;
+    std::string pop_fetch_topic() {
+        if (unknown_word_count == 0) return {};
         // Always pop index 0 (FIFO — oldest curiosity item first)
-        static char topic_buf[64];
-        strncpy(topic_buf, unknown_words[0], 63);
-        topic_buf[63] = '\0';
+        std::string res = unknown_words[0];
         // Shift remaining
         for (int i = 0; i + 1 < unknown_word_count; i++)
             memcpy(unknown_words[i], unknown_words[i+1], 64);
         unknown_word_count--;
-        return topic_buf;
+        return res;
     }
 
     // Called when the research pipeline successfully ingested new knowledge.

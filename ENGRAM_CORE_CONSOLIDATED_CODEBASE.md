@@ -20,25 +20,25 @@
 | **Build Tooling** | `run_engram.bat` | bat | 55 | 2.5 KB | Daemon compilation & launch driver script |
 | **Build Tooling** | `scripts/vcvars_community.bat` | bat | 40 | 1.2 KB | Dynamic Visual Studio toolset environment discovery script |
 | **Build Tooling** | `scripts/compile_research_gates.bat` | bat | 58 | 3.4 KB | Batch compiler for R0, R1, R3, R5 and B1 gauntlet gates |
-| **Memory Substrate** | `src/core/cluster_graph.h` | cpp | 1,015 | 46.8 KB | Contiguous flat arena (262k nodes), Treiber stack neurogenesis, CAS voltage, spinlock edges |
-| **Memory Substrate** | `src/core/fpsan_language.h` | cpp | 174 | 6.4 KB | SpikingTokenizer, LanguageCortex, 256-bit Hamming perception & O(1) word_cache |
-| **Memory Substrate** | `src/core/fpsan_memory.h` | cpp | 301 | 12.6 KB | SynapticMemory: exclusive RW-lock sleep/wake binary serialization for brain state |
-| **Memory Substrate** | `src/core/fpsan_cortex_harness.h` | cpp | 237 | 10.0 KB | Four-cortex thread harness with hybrid high-res waitable timer + microsecond spinwait tail |
+| **Memory Substrate** | `src/core/cluster_graph.h` | cpp | 1,101 | 50.0 KB | Contiguous flat arena (262k nodes), Treiber stack neurogenesis, CAS voltage, spinlock edges |
+| **Memory Substrate** | `src/core/fpsan_language.h` | cpp | 216 | 8.0 KB | SpikingTokenizer, LanguageCortex, 256-bit Hamming perception & O(1) word_cache |
+| **Memory Substrate** | `src/core/fpsan_memory.h` | cpp | 381 | 16.3 KB | SynapticMemory: exclusive RW-lock sleep/wake binary serialization for brain state |
+| **Memory Substrate** | `src/core/fpsan_cortex_harness.h` | cpp | 254 | 10.6 KB | Four-cortex thread harness with hybrid high-res waitable timer + microsecond spinwait tail |
 | **Memory Substrate** | `src/core/fpsan_temporal_memory.h` | cpp | 184 | 6.3 KB | Temporal chain recording, episodic hub links & multi-tier decay |
-| **Perception & Safety** | `src/core/fpsan_lexer.h` | cpp | 952 | 42.3 KB | Trie lexicon POS lookup, deterministic FSM phrase grouper, SVO triple ingest |
+| **Perception & Safety** | `src/core/fpsan_lexer.h` | cpp | 962 | 42.5 KB | Trie lexicon POS lookup, deterministic FSM phrase grouper, SVO triple ingest |
 | **Perception & Safety** | `src/core/fpsan_sandbox.h` | cpp | 226 | 10.3 KB | ShadowBrain counterfactual safety veto & HTTP tool primitive registration |
 | **Perception & Safety** | `src/core/fpsan_motor.h` | cpp | 792 | 27.8 KB | Motor action structures, UIAutomation OS input injection, action queues |
-| **Perception & Safety** | `src/core/fpsan_drives.h` | cpp | 401 | 15.5 KB | Homeostatic drives (boredom, curiosity, engagement) & autonomous goal triggers |
+| **Perception & Safety** | `src/core/fpsan_drives.h` | cpp | 400 | 15.4 KB | Homeostatic drives (boredom, curiosity, engagement) & autonomous goal triggers |
 | **Perception & Safety** | `src/core/fpsan_neuromod.h` | cpp | 82 | 3.2 KB | Global neuromodulation: atomic plasticity_scale, arousal, and prediction error EMA |
-| **Perception & Safety** | `src/core/fpsan_world_model.h` | cpp | 63 | 2.1 KB | Graph-walked transition prior: greedy next-step prediction via CAUSES/TEMPORAL edges |
+| **Perception & Safety** | `src/core/fpsan_world_model.h` | cpp | 64 | 2.1 KB | Graph-walked transition prior: greedy next-step prediction via CAUSES/TEMPORAL edges |
 | **Perception & Safety** | `src/core/fpsan_metacognition.h` | cpp | 116 | 4.4 KB | Metacognitive monitoring, confidence tracking, and doubt/frustration telemetry |
 | **Perception & Safety** | `src/core/fpsan_metamorphic.h` | cpp | 207 | 8.2 KB | Metamorphic agency: dynamic C++ template generation, cl.exe invocation & DLL hot-load |
-| **Perception & Safety** | `src/core/fpsan_san_scheduler.h` | cpp | 218 | 7.4 KB | Spiking Asynchronous Network event queue & discrete spike dispatcher |
+| **Perception & Safety** | `src/core/fpsan_san_scheduler.h` | cpp | 219 | 7.4 KB | Spiking Asynchronous Network event queue & discrete spike dispatcher |
 | **Perception & Safety** | `src/core/fpsan_wasm_sandbox.h` | cpp | 69 | 2.5 KB | Wasm3 sandboxed execution interface with instruction & memory gas budgets |
 | **Perception & Safety** | `src/core/fpsan_wasm_sandbox.cpp` | cpp | 210 | 5.0 KB | Wasm3 sandbox implementation: runtime lifecycle, function dispatch, isolation |
 | **Perception & Safety** | `src/core/fpsan_reasoning.h` | cpp | 204 | 9.7 KB | BFS path reasoning, hypothesis testing, and contradiction detection |
 | **Perception & Safety** | `src/core/fpsan_identity.h` | cpp | 45 | 2.2 KB | Self-knowledge axioms, identity verification, and core system directives |
-| **Perception & Safety** | `src/core/fpsan_speaker.h` | cpp | 188 | 6.0 KB | Predicate target extraction and natural language response assembly |
+| **Perception & Safety** | `src/core/fpsan_speaker.h` | cpp | 189 | 6.0 KB | Predicate target extraction and natural language response assembly |
 | **Perception & Safety** | `src/core/fpsan_hierarchy.h` | cpp | 284 | 9.9 KB | Hierarchical cortex scheduling and cross-cortex voltage synchronization |
 | **Perception & Safety** | `src/core/fpsan_voice.h` | cpp | 114 | 3.4 KB | Windows SAPI text-to-speech bridge |
 | **Perception & Safety** | `src/core/fpsan_ears.h` | cpp | 679 | 25.3 KB | Continuous acoustic cortex dictation using Windows Speech Recognition (SAPI) |
@@ -64,7 +64,7 @@
 | **Benchmarks & Gates** | `src/benchmark/phase13_gate.cpp` | cpp | 191 | 6.2 KB | Phase 13 sovereign reasoning cycle & ShadowBrain safety veto gate |
 | **Benchmarks & Gates** | `src/benchmark/adversarial_sandbox_gate.cpp` | cpp | 315 | 11.8 KB | Adversarial destructive scenario suite (50 safe vs. 20 destructive test cases) |
 
-**Total Scope:** **52 files** | **14,935 lines of code** | **601.2 KB** uncompressed text.
+**Total Scope:** **52 files** | **15,172 lines of code** | **610.4 KB** uncompressed text.
 
 ---
 
@@ -788,7 +788,7 @@ Other edge types still print as **`TEMPORAL` / `NEXT_WORD` / …** with weights.
 # ==============================================================================
 
 CXX = cl
-CXXFLAGS = /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src/core /I src/benchmark /I vendor/sqlite3/sqlite-amalgamation-3470200
+CXXFLAGS = /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src/core /I src/benchmark /I vendor/sqlite3/sqlite-amalgamation-3470200
 LIBS = Psapi.lib Winmm.lib user32.lib
 STACK = /link /STACK:16777216
 
@@ -863,8 +863,8 @@ if not exist "%CD%\build\m3_core.obj" (
 set M3OBJS=build\m3_api_libc.obj build\m3_bind.obj build\m3_code.obj build\m3_compile.obj build\m3_core.obj build\m3_env.obj build\m3_exec.obj build\m3_function.obj build\m3_info.obj build\m3_module.obj build\m3_parse.obj
 
 echo [engram] compiling...
-cl /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core /c src\core\fpsan_wasm_sandbox.cpp /Fobuild\fpsan_wasm_sandbox.obj || exit /b 1
-cl /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core ^
+cl /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core /c src\core\fpsan_wasm_sandbox.cpp /Fobuild\fpsan_wasm_sandbox.obj || exit /b 1
+cl /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core ^
   src\fpsan_live_core.cpp build\fpsan_wasm_sandbox.obj %M3OBJS% ^
   /Fobuild\engram.obj /Febuild\engram.exe ^
   /link /STACK:16777216 ^
@@ -952,7 +952,7 @@ if errorlevel 1 exit /b 1
 if not exist "%ROOT%\build" mkdir "%ROOT%\build"
 
 set COREINC=/I "%ROOT%\src\core" /I "%ROOT%\src\benchmark"
-set FLAGS=/std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS
+set FLAGS=/std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS
 set WASM3_SRC=%ROOT%\vendor\wasm3\upstream\source
 
 if not exist "%ROOT%\build\m3_core.obj" call :build_wasm3_objs
@@ -1006,7 +1006,7 @@ exit /b 0
 ## 📁 Memory Substrate
 
 ### File: `src/core/cluster_graph.h`
-> **Lines:** 1,015 | **Size:** 46.8 KB | **Role:** Contiguous flat arena (262k nodes), Treiber stack neurogenesis, CAS voltage, spinlock edges
+> **Lines:** 1,101 | **Size:** 50.0 KB | **Role:** Contiguous flat arena (262k nodes), Treiber stack neurogenesis, CAS voltage, spinlock edges
 
 ```cpp
 #pragma once
@@ -1039,6 +1039,11 @@ exit /b 0
 #include <thread>
 #include <mutex>
 #include <memory>
+#include <bit>
+#include <array>
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 #include "fpsan_motor.h"
 #include "fpsan_neuromod.h"
 
@@ -1140,6 +1145,7 @@ struct alignas(64) ClusterNode {
     // ── Hot fields (cache line 0) ────────────────────────────
     std::atomic<float> activation{0.0f};
     std::atomic<bool>  alive{false};
+    std::atomic<bool>  constructed{false};
     std::atomic<bool>  clamped{false};
     std::atomic<bool>  is_binding_node{false};
     std::atomic<bool>  fired_this_query{false};
@@ -1148,11 +1154,13 @@ struct alignas(64) ClusterNode {
     /// Phase 11: MEMORY_TIER_* constants
     std::atomic<uint8_t> memory_tier{0};
 
-    std::atomic<int>   edge_count{0};
-    std::atomic_flag   edge_lock{};          // micro-spinlock for add_edge
+    std::atomic<int>      edge_count{0};
+    std::atomic_flag      edge_lock{};          // micro-spinlock for add_edge
+    std::atomic<uint32_t> edge_seq{0};          // seqlock counter for lock-free torn-free reads
 
-    std::atomic<int>   inverse_edge_count{0};
-    std::atomic_flag   inverse_edge_lock{};  // micro-spinlock for add_inverse_edge
+    std::atomic<int>      inverse_edge_count{0};
+    std::atomic_flag      inverse_edge_lock{};  // micro-spinlock for add_inverse_edge
+    std::atomic<uint32_t> inverse_edge_seq{0};  // seqlock counter for inverse reads
 
     // ── Motor payload (cold, only read when is_motor_node==true) ─
     MotorAction motor_action;
@@ -1167,7 +1175,7 @@ struct alignas(64) ClusterNode {
     // ─────────────────────────────────────────────────────────
     void init() noexcept {
         activation.store(0.0f, std::memory_order_relaxed);
-        alive.store(true,      std::memory_order_relaxed);
+        alive.store(false,     std::memory_order_relaxed);
         clamped.store(false,   std::memory_order_relaxed);
         is_binding_node.store(false, std::memory_order_relaxed);
         fired_this_query.store(false, std::memory_order_relaxed);
@@ -1175,35 +1183,84 @@ struct alignas(64) ClusterNode {
         memory_tier.store(MEMORY_TIER_TRANSIENT, std::memory_order_relaxed);
         edge_count.store(0,         std::memory_order_relaxed);
         inverse_edge_count.store(0, std::memory_order_relaxed);
+        edge_seq.store(0,           std::memory_order_relaxed);
+        inverse_edge_seq.store(0,   std::memory_order_relaxed);
         memset(&motor_action, 0, sizeof(MotorAction));
-        // edge_lock and inverse_edge_lock are cleared by value-init / ATOMIC_FLAG_INIT
+        memset(edges, 0, sizeof(edges));
+        memset(inverse_edges, 0, sizeof(inverse_edges));
     }
 
     // ─────────────────────────────────────────────────────────
-    // add_voltage() — thread-safe floating-point accumulation.
-    // CAS loop: no torn writes. Multiple cortices can spike the
-    // same node simultaneously without corruption.
+    // add_voltage() — C++23 atomic floating-point fetch_add.
     // ─────────────────────────────────────────────────────────
     void add_voltage(float dv) noexcept {
-        float old = activation.load(std::memory_order_relaxed);
-        float desired;
-        do {
-            desired = old + dv;
-        } while (!activation.compare_exchange_weak(
-            old, desired,
-            std::memory_order_release,
-            std::memory_order_relaxed));
+        activation.fetch_add(dv, std::memory_order_acq_rel);
     }
 
     // ─────────────────────────────────────────────────────────
-    // add_edge() — spinlock-protected edge insertion/update.
-    // Readers in spread_activation are lock-free; they may see
-    // a momentarily-stale order but never a torn slot.
+    // Seqlock snapshots: bounded copy for torn-free edge traversal
+    // ─────────────────────────────────────────────────────────
+    int copy_edges_snapshot(Edge* out, int max_n) const noexcept {
+        for (int spin = 0;; ++spin) {
+            uint32_t s1 = edge_seq.load(std::memory_order_acquire);
+            if (s1 & 1u) {
+                if (spin > 64) std::this_thread::yield();
+                else {
+                    #if defined(_MSC_VER)
+                    _mm_pause();
+                    #else
+                    std::this_thread::yield();
+                    #endif
+                }
+                continue;
+            }
+            int ec = edge_count.load(std::memory_order_relaxed);
+            int n = (ec < max_n) ? ec : max_n;
+            for (int i = 0; i < n; i++) {
+                out[i] = edges[i];
+            }
+            std::atomic_thread_fence(std::memory_order_acquire);
+            uint32_t s2 = edge_seq.load(std::memory_order_acquire);
+            if (s1 == s2) return n;
+            if (spin > 64) std::this_thread::yield();
+        }
+    }
+
+    int copy_inverse_edges_snapshot(Edge* out, int max_n) const noexcept {
+        for (int spin = 0;; ++spin) {
+            uint32_t s1 = inverse_edge_seq.load(std::memory_order_acquire);
+            if (s1 & 1u) {
+                if (spin > 64) std::this_thread::yield();
+                else {
+                    #if defined(_MSC_VER)
+                    _mm_pause();
+                    #else
+                    std::this_thread::yield();
+                    #endif
+                }
+                continue;
+            }
+            int ec = inverse_edge_count.load(std::memory_order_relaxed);
+            int n = (ec < max_n) ? ec : max_n;
+            for (int i = 0; i < n; i++) {
+                out[i] = inverse_edges[i];
+            }
+            std::atomic_thread_fence(std::memory_order_acquire);
+            uint32_t s2 = inverse_edge_seq.load(std::memory_order_acquire);
+            if (s1 == s2) return n;
+            if (spin > 64) std::this_thread::yield();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // add_edge() — spinlock-protected edge insertion/update with seqlock sequencing.
     // ─────────────────────────────────────────────────────────
     void add_edge(int target_id, float strength, EdgeType etype = EDGE_TEMPORAL,
                   EdgeProvenance prov = PROV_UNKNOWN) noexcept {
         while (edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+
+        edge_seq.fetch_add(1, std::memory_order_release);
 
         int ec = edge_count.load(std::memory_order_relaxed);
 
@@ -1214,6 +1271,7 @@ struct alignas(64) ClusterNode {
                 edges[i].co_occur_count++;
                 if (prov != PROV_UNKNOWN) edges[i].provenance = prov;
                 _sort_edges(ec);
+                edge_seq.fetch_add(1, std::memory_order_release);
                 edge_lock.clear(std::memory_order_release);
                 return;
             }
@@ -1229,12 +1287,15 @@ struct alignas(64) ClusterNode {
             }
         }
         _sort_edges(ec);
+        edge_seq.fetch_add(1, std::memory_order_release);
         edge_lock.clear(std::memory_order_release);
     }
 
     void add_inverse_edge(int target_id, float strength, EdgeType etype = EDGE_TEMPORAL) noexcept {
         while (inverse_edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
 
         int ec = inverse_edge_count.load(std::memory_order_relaxed);
 
@@ -1244,6 +1305,7 @@ struct alignas(64) ClusterNode {
                 inverse_edges[i].weight  = std::min(inverse_edges[i].weight, 5.0f);
                 inverse_edges[i].co_occur_count++;
                 _sort_inv_edges(ec);
+                inverse_edge_seq.fetch_add(1, std::memory_order_release);
                 inverse_edge_lock.clear(std::memory_order_release);
                 return;
             }
@@ -1259,33 +1321,40 @@ struct alignas(64) ClusterNode {
             }
         }
         _sort_inv_edges(ec);
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
         inverse_edge_lock.clear(std::memory_order_release);
     }
 
     int count_edges_of_type(EdgeType etype) const noexcept {
-        int n = 0, ec = edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int ec = copy_edges_snapshot(snap, MAX_FANOUT);
+        int n = 0;
         for (int i = 0; i < ec; i++)
-            if (edges[i].type == etype) n++;
+            if (snap[i].type == etype) n++;
         return n;
     }
 
     void prune() noexcept {
         while (edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+        edge_seq.fetch_add(1, std::memory_order_release);
         int ec = edge_count.load(std::memory_order_relaxed);
         int nc = 0;
         for (int i = 0; i < ec; i++)
             if (edges[i].weight >= EDGE_PRUNE) edges[nc++] = edges[i];
         edge_count.store(nc, std::memory_order_relaxed);
+        edge_seq.fetch_add(1, std::memory_order_release);
         edge_lock.clear(std::memory_order_release);
 
         while (inverse_edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
         int iec = inverse_edge_count.load(std::memory_order_relaxed);
         int nic = 0;
         for (int i = 0; i < iec; i++)
             if (inverse_edges[i].weight >= EDGE_PRUNE) inverse_edges[nic++] = inverse_edges[i];
         inverse_edge_count.store(nic, std::memory_order_relaxed);
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
         inverse_edge_lock.clear(std::memory_order_release);
     }
 
@@ -1389,6 +1458,7 @@ struct ClusterGraph {
         void* raw = _aligned_malloc(sizeof(ClusterNode) * CORTEX_CAPACITY,
                                     alignof(ClusterNode));
         if (!raw) throw std::bad_alloc();
+        memset(raw, 0, sizeof(ClusterNode) * CORTEX_CAPACITY);
         _cortex_raw   = std::unique_ptr<void, RawDeleter>(raw);
         cortex_memory = static_cast<ClusterNode*>(raw);
 
@@ -1410,7 +1480,8 @@ struct ClusterGraph {
         for (int i = 0; i < actual; i++) {
             new (&cortex_memory[i]) ClusterNode();  // placement-new (default ctor)
             cortex_memory[i].init();
-            cortex_memory[i].alive.store(true, std::memory_order_relaxed);
+            cortex_memory[i].constructed.store(true, std::memory_order_release);
+            cortex_memory[i].alive.store(true, std::memory_order_release);
             free_next[i].store(-1, std::memory_order_relaxed);
         }
         node_count.store(actual, std::memory_order_release);
@@ -1436,6 +1507,7 @@ struct ClusterGraph {
                     std::memory_order_release,
                     std::memory_order_acquire)) {
                 cortex_memory[id].init();
+                cortex_memory[id].alive.store(true, std::memory_order_release);
                 return id;
             }
         }
@@ -1446,9 +1518,13 @@ struct ClusterGraph {
             node_count.fetch_sub(1, std::memory_order_relaxed);
             return -1;
         }
-        new (&cortex_memory[id]) ClusterNode(); // first-time construction
+        if (!cortex_memory[id].constructed.load(std::memory_order_acquire)) {
+            new (&cortex_memory[id]) ClusterNode(); // first-time construction
+            cortex_memory[id].constructed.store(true, std::memory_order_release);
+        }
         cortex_memory[id].init();
         free_next[id].store(-1, std::memory_order_relaxed);
+        cortex_memory[id].alive.store(true, std::memory_order_release);
         return id;
     }
 
@@ -1456,6 +1532,7 @@ struct ClusterGraph {
     // kill() — push node onto the Treiber stack. Lock-free.
     // ────────────────────────────────────────────────────────
     void kill(int id) noexcept {
+        if (id < 0 || id >= CORTEX_CAPACITY) return;
         cortex_memory[id].alive.store(false, std::memory_order_release);
         cortex_memory[id].edge_count.store(0, std::memory_order_release);
         cortex_memory[id].inverse_edge_count.store(0, std::memory_order_release);
@@ -1538,13 +1615,13 @@ struct ClusterGraph {
         }
         int activated = 1;
 
-        int ec = cortex_memory[source].edge_count.load(std::memory_order_acquire);
-        int limit = (ec < SPREAD_FANOUT_CAP) ? ec : SPREAD_FANOUT_CAP;
+        Edge snap[SPREAD_FANOUT_CAP];
+        int limit = cortex_memory[source].copy_edges_snapshot(snap, SPREAD_FANOUT_CAP);
 
         for (int i = 0; i < limit; i++) {
-            int tgt      = cortex_memory[source].edges[i].target;
-            float w      = cortex_memory[source].edges[i].weight;
-            EdgeType ety = cortex_memory[source].edges[i].type;
+            int tgt      = snap[i].target;
+            float w      = snap[i].weight;
+            EdgeType ety = snap[i].type;
             float prop   = strength * DECAY_PER_HOP * w;
 
             if (tgt < 0 || tgt >= nc) continue;
@@ -1559,11 +1636,11 @@ struct ClusterGraph {
                         cortex_memory[tgt].fired_this_query.store(true, std::memory_order_release);
                         activated += spread_activation(tgt, act, depth + 1);
                     } else if (cortex_memory[tgt].fired_this_query.load(std::memory_order_acquire)) {
-                        int sub_ec = cortex_memory[tgt].edge_count.load(std::memory_order_acquire);
-                        int sub_lim = (sub_ec < SPREAD_FANOUT_CAP) ? sub_ec : SPREAD_FANOUT_CAP;
+                        Edge sub_snap[SPREAD_FANOUT_CAP];
+                        int sub_lim = cortex_memory[tgt].copy_edges_snapshot(sub_snap, SPREAD_FANOUT_CAP);
                         for (int j = 0; j < sub_lim; j++) {
-                            int st = cortex_memory[tgt].edges[j].target;
-                            float sp = act * DECAY_PER_HOP * cortex_memory[tgt].edges[j].weight;
+                            int st = sub_snap[j].target;
+                            float sp = act * DECAY_PER_HOP * sub_snap[j].weight;
                             if (st < 0 || st >= nc) continue;
                             if (!cortex_memory[st].is_binding_node.load(std::memory_order_acquire)) {
                                 float cur = cortex_memory[st].activation.load(std::memory_order_acquire);
@@ -1594,12 +1671,12 @@ struct ClusterGraph {
             cortex_memory[source].activation.store(strength, std::memory_order_release);
 
         int activated = 1;
-        int iec = cortex_memory[source].inverse_edge_count.load(std::memory_order_acquire);
-        int limit = (iec < SPREAD_FANOUT_CAP) ? iec : SPREAD_FANOUT_CAP;
+        Edge snap[SPREAD_FANOUT_CAP];
+        int limit = cortex_memory[source].copy_inverse_edges_snapshot(snap, SPREAD_FANOUT_CAP);
 
         for (int i = 0; i < limit; i++) {
-            int tgt    = cortex_memory[source].inverse_edges[i].target;
-            float prop = strength * DECAY_PER_HOP * cortex_memory[source].inverse_edges[i].weight;
+            int tgt    = snap[i].target;
+            float prop = strength * DECAY_PER_HOP * snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
             float tcur = cortex_memory[tgt].activation.load(std::memory_order_acquire);
             if (prop > tcur)
@@ -1620,12 +1697,13 @@ struct ClusterGraph {
             cortex_memory[source].activation.store(strength, std::memory_order_release);
 
         int activated = 1, followed = 0;
-        int ec = cortex_memory[source].edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int ec = cortex_memory[source].copy_edges_snapshot(snap, MAX_FANOUT);
 
         for (int i = 0; i < ec && followed < SPREAD_FANOUT_CAP; i++) {
-            if (cortex_memory[source].edges[i].type != follow_type) continue;
-            int tgt    = cortex_memory[source].edges[i].target;
-            float prop = strength * DECAY_PER_HOP * cortex_memory[source].edges[i].weight;
+            if (snap[i].type != follow_type) continue;
+            int tgt    = snap[i].target;
+            float prop = strength * DECAY_PER_HOP * snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
             float tcur = cortex_memory[tgt].activation.load(std::memory_order_acquire);
             if (tcur >= 0.0f && prop > tcur)
@@ -1647,12 +1725,13 @@ struct ClusterGraph {
             cortex_memory[source].activation.store(strength, std::memory_order_release);
 
         int activated = 1, followed = 0;
-        int iec = cortex_memory[source].inverse_edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int iec = cortex_memory[source].copy_inverse_edges_snapshot(snap, MAX_FANOUT);
 
         for (int i = 0; i < iec && followed < SPREAD_FANOUT_CAP; i++) {
-            if (cortex_memory[source].inverse_edges[i].type != follow_type) continue;
-            int tgt    = cortex_memory[source].inverse_edges[i].target;
-            float prop = strength * DECAY_PER_HOP * cortex_memory[source].inverse_edges[i].weight;
+            if (snap[i].type != follow_type) continue;
+            int tgt    = snap[i].target;
+            float prop = strength * DECAY_PER_HOP * snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
             float tcur = cortex_memory[tgt].activation.load(std::memory_order_acquire);
             if (tcur >= 0.0f && prop > tcur)
@@ -1775,6 +1854,7 @@ struct ClusterGraph {
         ClusterNode& pre = cortex_memory[pre_id];
         while (pre.edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+        pre.edge_seq.fetch_add(1, std::memory_order_release);
         int ec = pre.edge_count.load(std::memory_order_relaxed);
         for (int i = 0; i < ec; i++) {
             if (pre.edges[i].target == post_id) {
@@ -1784,6 +1864,7 @@ struct ClusterGraph {
                 break;
             }
         }
+        pre.edge_seq.fetch_add(1, std::memory_order_release);
         pre.edge_lock.clear(std::memory_order_release);
     }
 
@@ -1816,9 +1897,9 @@ struct ClusterGraph {
         int current = start, steps = 0;
         const int nc = node_count.load(std::memory_order_acquire);
         for (int s = 0; s < max_steps; s++) {
-            int ec = cortex_memory[current].edge_count.load(std::memory_order_acquire);
-            if (ec == 0) break;
-            current = cortex_memory[current].edges[0].target;
+            Edge snap[1];
+            if (cortex_memory[current].copy_edges_snapshot(snap, 1) == 0) break;
+            current = snap[0].target;
             if (current < 0 || current >= nc) break;
             out_path[steps++] = current;
         }
@@ -1831,12 +1912,13 @@ struct ClusterGraph {
         const int nc = node_count.load(std::memory_order_acquire);
         for (int s = 0; s < max_steps; s++) {
             int best_tgt = -1; float best_w = 0.0f;
-            int ec = cortex_memory[current].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[current].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                if (cortex_memory[current].edges[e].type == follow_type &&
-                    cortex_memory[current].edges[e].weight > best_w) {
-                    best_w = cortex_memory[current].edges[e].weight;
-                    best_tgt = cortex_memory[current].edges[e].target;
+                if (snap[e].type == follow_type &&
+                    snap[e].weight > best_w) {
+                    best_w = snap[e].weight;
+                    best_tgt = snap[e].target;
                 }
             }
             if (best_tgt < 0 || best_tgt >= nc) break;
@@ -1861,9 +1943,10 @@ struct ClusterGraph {
 
         while (qfront < qback) {
             int cur = _bfs_queue[qfront++];
-            int ec = cortex_memory[cur].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[cur].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                int tgt = cortex_memory[cur].edges[e].target;
+                int tgt = snap[e].target;
                 if (tgt < 0 || tgt >= nc || _bfs_visited[tgt]) continue;
                 _bfs_visited[tgt] = true;
                 _bfs_parent[tgt]  = cur;
@@ -1901,10 +1984,11 @@ struct ClusterGraph {
 
         while (qfront < qback) {
             int cur = _bfs_queue[qfront++];
-            int ec = cortex_memory[cur].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[cur].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                if (cortex_memory[cur].edges[e].type != follow_type) continue;
-                int tgt = cortex_memory[cur].edges[e].target;
+                if (snap[e].type != follow_type) continue;
+                int tgt = snap[e].target;
                 if (tgt < 0 || tgt >= nc || _bfs_visited[tgt]) continue;
                 _bfs_visited[tgt] = true;
                 _bfs_parent[tgt]  = cur;
@@ -1978,18 +2062,19 @@ struct ClusterGraph {
 
         // Build fingerprints: 32-bit = (alive_ec:8 | type_histogram:24 condensed)
         struct FP { uint32_t fp; int id; };
-        // Use a small fixed stack buffer; if nc is huge we sample
+        // Use a fixed stack buffer; if nc is huge we sample
         constexpr int MAX_SAMPLE = 1024;
-        static FP fps[MAX_SAMPLE];
+        std::array<FP, MAX_SAMPLE> fps;
         int ns = 0;
 
         for (int i = 0; i < nc && ns < MAX_SAMPLE; i++) {
-            if (!cortex_memory[i].alive.load(std::memory_order_relaxed)) continue;
-            int ec = cortex_memory[i].edge_count.load(std::memory_order_relaxed);
+            if (!cortex_memory[i].alive.load(std::memory_order_acquire)) continue;
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[i].copy_edges_snapshot(snap, MAX_FANOUT);
             if (ec == 0) continue;
             uint32_t hist = 0;
             for (int e = 0; e < ec; e++) {
-                EdgeType t = cortex_memory[i].edges[e].type;
+                EdgeType t = snap[e].type;
                 hist ^= (1u << (t % 32));
             }
             fps[ns++] = { (uint32_t)(ec & 0xFF) | (hist << 8), i };
@@ -2013,10 +2098,11 @@ struct ClusterGraph {
         const int nc = node_count.load(std::memory_order_acquire);
         for (int i = 0; i < nc; i++) {
             if (!cortex_memory[i].alive.load(std::memory_order_acquire)) continue;
-            int ec = cortex_memory[i].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[i].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                uint32_t t   = (uint32_t)cortex_memory[i].edges[e].target;
-                uint32_t raw; memcpy(&raw, &cortex_memory[i].edges[e].weight, 4);
+                uint32_t t   = (uint32_t)snap[e].target;
+                uint32_t raw = std::bit_cast<uint32_t>(snap[e].weight);
                 h ^= (uint64_t)(i * 1000003 + t) ^ ((uint64_t)raw << 32);
                 h *= 1099511628211ull;
             }
@@ -2030,7 +2116,7 @@ struct ClusterGraph {
 ---
 
 ### File: `src/core/fpsan_language.h`
-> **Lines:** 174 | **Size:** 6.4 KB | **Role:** SpikingTokenizer, LanguageCortex, 256-bit Hamming perception & O(1) word_cache
+> **Lines:** 216 | **Size:** 8.0 KB | **Role:** SpikingTokenizer, LanguageCortex, 256-bit Hamming perception & O(1) word_cache
 
 ```cpp
 #pragma once
@@ -2045,6 +2131,7 @@ struct ClusterGraph {
 #include <cstdint>
 #include <cstring>
 #include <unordered_map>
+#include <shared_mutex>
 
 // Language Parameters
 const int LANG_CHAR_DIM = 64;   // 8x8 spike grid
@@ -2111,8 +2198,10 @@ struct LanguageCortex {
 
     Cluster clusters[LANG_CLUSTERS];
     std::unordered_map<std::string, int> word_cache;
+    mutable std::shared_mutex cortex_lock;
 
     void init() {
+        std::unique_lock<std::shared_mutex> lock(cortex_lock);
         word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             memset(clusters[c].weights, 0, LANG_WORD_DIM);
@@ -2125,6 +2214,7 @@ struct LanguageCortex {
     }
 
     void rebuild_cache() {
+        std::unique_lock<std::shared_mutex> lock(cortex_lock);
         word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             if (clusters[c].active && clusters[c].word_label[0] != '\0') {
@@ -2133,13 +2223,15 @@ struct LanguageCortex {
         }
     }
 
-    int active_count() {
+    int active_count() const {
+        std::shared_lock<std::shared_mutex> lock(cortex_lock);
         int n = 0;
         for (int c = 0; c < LANG_CLUSTERS; c++) if (clusters[c].active) n++;
         return n;
     }
 
     const char* get_word(int cluster_id) const {
+        std::shared_lock<std::shared_mutex> lock(cortex_lock);
         if (cluster_id >= 0 && cluster_id < LANG_CLUSTERS && clusters[cluster_id].active) {
             return clusters[cluster_id].word_label;
         }
@@ -2148,7 +2240,46 @@ struct LanguageCortex {
 
     // Perceive a 256-dim word hash
     int perceive(const int8_t* input, bool learn, const char* word = nullptr) {
-        // Fast path: exact label lookup
+        // Fast path: exact label lookup under shared lock
+        if (word != nullptr && word[0] != '\0') {
+            std::shared_lock<std::shared_mutex> rlock(cortex_lock);
+            auto it = word_cache.find(word);
+            if (it != word_cache.end()) {
+                return it->second;
+            }
+        }
+
+        if (!learn) {
+            std::shared_lock<std::shared_mutex> rlock(cortex_lock);
+            if (word != nullptr && word[0] != '\0') {
+                auto it = word_cache.find(word);
+                if (it != word_cache.end()) return it->second;
+            }
+
+            int best = -1;
+            float best_sim = -9999.0f;
+            float vigilance = 0.85f;
+
+            for (int c = 0; c < LANG_CLUSTERS; c++) {
+                if (!clusters[c].active) continue;
+                int score = 0, act = 0;
+                for (int i = 0; i < LANG_WORD_DIM; i++) {
+                    if (input[i] != 0 || clusters[c].weights[i] != 0) {
+                        if (clusters[c].weights[i] == input[i]) score++; else score--;
+                        act++;
+                    }
+                }
+                if (act > 0) {
+                    float sim = (float)score / act;
+                    if (sim > best_sim) { best_sim = sim; best = c; }
+                }
+            }
+            if (best_sim >= vigilance) return best;
+            return -1;
+        }
+
+        // Exclusive lock for mutation path (learn == true)
+        std::unique_lock<std::shared_mutex> wlock(cortex_lock);
         if (word != nullptr && word[0] != '\0') {
             auto it = word_cache.find(word);
             if (it != word_cache.end()) {
@@ -2158,8 +2289,6 @@ struct LanguageCortex {
 
         int best = -1, first_empty = -1;
         float best_sim = -9999.0f;
-
-        // Language requires HIGH vigilance (0.85) to distinguish very similar words
         float vigilance = 0.85f;
 
         for (int c = 0; c < LANG_CLUSTERS; c++) {
@@ -2180,10 +2309,10 @@ struct LanguageCortex {
             }
         }
 
-        if (best_sim < vigilance && first_empty != -1 && learn) best = first_empty;
-        else if (best_sim < vigilance && !learn) return -1;
+        if (best_sim < vigilance && first_empty != -1) best = first_empty;
+        else if (best_sim < vigilance) return -1;
 
-        if (best != -1 && learn && !clusters[best].frozen) {
+        if (best != -1 && !clusters[best].frozen) {
             clusters[best].sample_count++;
             float lr = std::max(0.1f, 1.0f / (float)clusters[best].sample_count);
             for (int i = 0; i < LANG_WORD_DIM; i++) {
@@ -2198,7 +2327,6 @@ struct LanguageCortex {
                 clusters[best].word_label[63] = '\0';
                 word_cache[word] = best;
             }
-            // Language freezes very fast (5 exposures)
             if (clusters[best].sample_count >= 5)
                 clusters[best].frozen = true;
         } else if (best != -1 && word != nullptr && word[0] != '\0') {
@@ -2213,28 +2341,29 @@ struct LanguageCortex {
 ---
 
 ### File: `src/core/fpsan_memory.h`
-> **Lines:** 301 | **Size:** 12.6 KB | **Role:** SynapticMemory: exclusive RW-lock sleep/wake binary serialization for brain state
+> **Lines:** 381 | **Size:** 16.3 KB | **Role:** SynapticMemory: exclusive RW-lock sleep/wake binary serialization for brain state
 
 ```cpp
 #pragma once
 // ============================================================
 // FP-SAN Phase 1 — Synaptic Serialization (The Sleep Cycle)
-// fpsan_memory.h — Thread-safe binary brain persistence.
+// fpsan_memory.h — Lossless v3 binary brain persistence with FNV-1a checksum.
 //
 // GUARANTEES:
 //   sleep() acquires std::unique_lock on graph->graph_rw_lock.
-//     All four cognitive cortices stall. The snapshot is taken
-//     from a quiescent state — bit-identical across reruns from
-//     the same logical state. No torn writes possible.
-//   wake()  mirrors the unique_lock. Iterates cortex_memory
-//     flat array directly — no chunk indirection.
-//   Voltages are NOT saved (biological sleep clears working
-//   memory). Only topology is persisted.
+//     All four cognitive cortices stall. Quiescent snapshot.
+//   wake()  mirrors unique_lock. Restores all flags, tiers, motor actions,
+//     and provenance codes. Rejects corrupted files via FNV-1a payload checksum.
 //
-// File Format (version 2 — flat-arena edition):
-//   Block 1: FpsanHeader
+// File Format (version 3 — lossless edition):
+//   Block 1: FpsanHeader (magic, version=3, node_count, cortex_active_count, alive_node_count)
 //   Block 2: CortexRecord[] (active language clusters)
-//   Block 3: NodeRecord + EdgeRecord[] per alive node
+//   Block 3: Per alive node:
+//              - NodeRecord (node_id, edge_count, inverse_edge_count, flags, memory_tier, reserved)
+//              - [Optional] MotorAction (only if flags & NODE_FLAG_MOTOR)
+//              - EdgeRecord[] for forward edges (with provenance)
+//              - EdgeRecord[] for inverse edges (with provenance)
+//   Block 4: Trailing uint64_t payload_fnv1a checksum
 // ============================================================
 
 #include "cluster_graph.h"
@@ -2243,10 +2372,29 @@ struct LanguageCortex {
 #include <cstring>
 #include <chrono>
 #include <shared_mutex>
+#include <cstdint>
 
 // ── Binary format constants ───────────────────────────────────
 static constexpr uint32_t FPSAN_MAGIC   = 0x46505341; // "FPSA"
-static constexpr uint32_t FPSAN_VERSION = 2;           // v2: flat arena
+static constexpr uint32_t FPSAN_VERSION = 3;           // v3: lossless with provenance & node flags & checksum
+
+// 64-bit FNV-1a constants and helper
+static constexpr uint64_t FNV1A64_OFFSET_BASIS = 14695981039346656037ULL;
+static constexpr uint64_t FNV1A64_PRIME        = 1099511628211ULL;
+
+inline uint64_t fnv1a64_update(uint64_t hash, const void* data, size_t len) noexcept {
+    const uint8_t* p = static_cast<const uint8_t*>(data);
+    for (size_t i = 0; i < len; ++i) {
+        hash ^= p[i];
+        hash *= FNV1A64_PRIME;
+    }
+    return hash;
+}
+
+// Node flags for serialization
+static constexpr uint8_t NODE_FLAG_BINDING = 1 << 0;
+static constexpr uint8_t NODE_FLAG_MOTOR   = 1 << 1;
+static constexpr uint8_t NODE_FLAG_CLAMPED = 1 << 2;
 
 struct FpsanHeader {
     uint32_t magic;
@@ -2257,16 +2405,21 @@ struct FpsanHeader {
 };
 
 struct NodeRecord {
-    int32_t node_id;
-    int32_t edge_count;
-    int32_t inverse_edge_count;
+    int32_t  node_id;
+    int32_t  edge_count;
+    int32_t  inverse_edge_count;
+    uint8_t  flags;       // NODE_FLAG_*
+    uint8_t  memory_tier; // MEMORY_TIER_*
+    uint16_t reserved{0};
 };
 
 struct EdgeRecord {
-    int32_t target;
-    float   weight;
-    int32_t co_occur_count;
-    uint8_t type;
+    int32_t  target;
+    float    weight;
+    int32_t  co_occur_count;
+    uint8_t  type;
+    uint8_t  provenance; // EdgeProvenance
+    uint16_t reserved{0};
 };
 
 struct CortexRecord {
@@ -2278,23 +2431,11 @@ struct CortexRecord {
     char    word_label[64];
 };
 
-// ============================================================
-// SYNAPTIC MEMORY
-// ============================================================
 struct SynapticMemory {
-
-    // ──────────────────────────────────────────────────────────
-    // sleep() — snapshot the brain to a .fpsan file.
-    //
-    // Opens with std::unique_lock: all cognitive threads stall
-    // for the duration of the write. The lock is released when
-    // this function returns, resuming all cortices.
-    // ──────────────────────────────────────────────────────────
     static bool sleep(const char* filepath,
                       ClusterGraph* graph,
                       LanguageCortex* cortex)
     {
-        // Acquire exclusive brain lock — cognitive threads stall here
         std::unique_lock<std::shared_mutex> brain_lock(graph->graph_rw_lock);
 
         FILE* f = fopen(filepath, "wb");
@@ -2307,24 +2448,26 @@ struct SynapticMemory {
 
         const int nc = graph->node_count.load(std::memory_order_relaxed);
 
-        // Count alive nodes
         int alive_count = 0;
         for (int i = 0; i < nc; i++)
             if (graph->cortex_memory[i].alive.load(std::memory_order_relaxed)) alive_count++;
 
-        // Count active cortex clusters
         int cortex_active = 0;
         for (int i = 0; i < LANG_CLUSTERS; i++)
             if (cortex->clusters[i].active) cortex_active++;
 
         // Block 1: Header
         FpsanHeader header;
-        header.magic              = FPSAN_MAGIC;
-        header.version            = FPSAN_VERSION;
-        header.node_count         = (uint32_t)nc;
+        header.magic               = FPSAN_MAGIC;
+        header.version             = FPSAN_VERSION;
+        header.node_count          = (uint32_t)nc;
         header.cortex_active_count = (uint32_t)cortex_active;
-        header.alive_node_count   = (uint32_t)alive_count;
-        fwrite(&header, sizeof(FpsanHeader), 1, f);
+        header.alive_node_count    = (uint32_t)alive_count;
+        if (fwrite(&header, sizeof(FpsanHeader), 1, f) != 1) {
+            fclose(f); return false;
+        }
+
+        uint64_t running_hash = FNV1A64_OFFSET_BASIS;
 
         // Block 2: Language Cortex
         for (int i = 0; i < LANG_CLUSTERS; i++) {
@@ -2332,16 +2475,18 @@ struct SynapticMemory {
             CortexRecord rec;
             rec.cluster_id   = i;
             memcpy(rec.weights, cortex->clusters[i].weights, LANG_WORD_DIM);
-            memcpy(rec.accum,   cortex->clusters[i].accum,
-                   sizeof(float) * LANG_WORD_DIM);
+            memcpy(rec.accum,   cortex->clusters[i].accum, sizeof(float) * LANG_WORD_DIM);
             rec.sample_count = cortex->clusters[i].sample_count;
             rec.frozen       = cortex->clusters[i].frozen ? 1 : 0;
             memset(rec.word_label, 0, 64);
             strncpy(rec.word_label, cortex->clusters[i].word_label, 63);
-            fwrite(&rec, sizeof(CortexRecord), 1, f);
+            if (fwrite(&rec, sizeof(CortexRecord), 1, f) != 1) {
+                fclose(f); return false;
+            }
+            running_hash = fnv1a64_update(running_hash, &rec, sizeof(CortexRecord));
         }
 
-        // Block 3: Graph topology (flat iteration — no chunk indirection)
+        // Block 3: Graph topology (lossless with flags, tiers, motor actions, provenance)
         int total_edges_written = 0;
         for (int i = 0; i < nc; i++) {
             const ClusterNode& n = graph->cortex_memory[i];
@@ -2350,58 +2495,85 @@ struct SynapticMemory {
             const int ec  = n.edge_count.load(std::memory_order_relaxed);
             const int iec = n.inverse_edge_count.load(std::memory_order_relaxed);
 
+            uint8_t flags = 0;
+            if (n.is_binding_node.load(std::memory_order_relaxed)) flags |= NODE_FLAG_BINDING;
+            if (n.is_motor_node.load(std::memory_order_relaxed))   flags |= NODE_FLAG_MOTOR;
+            if (n.clamped.load(std::memory_order_relaxed))         flags |= NODE_FLAG_CLAMPED;
+
             NodeRecord nrec;
             nrec.node_id            = i;
             nrec.edge_count         = ec;
             nrec.inverse_edge_count = iec;
-            fwrite(&nrec, sizeof(NodeRecord), 1, f);
+            nrec.flags              = flags;
+            nrec.memory_tier        = n.memory_tier.load(std::memory_order_relaxed);
+            nrec.reserved           = 0;
+            if (fwrite(&nrec, sizeof(NodeRecord), 1, f) != 1) {
+                fclose(f); return false;
+            }
+            running_hash = fnv1a64_update(running_hash, &nrec, sizeof(NodeRecord));
+
+            // Optional MotorAction payload
+            if (flags & NODE_FLAG_MOTOR) {
+                if (fwrite(&n.motor_action, sizeof(MotorAction), 1, f) != 1) {
+                    fclose(f); return false;
+                }
+                running_hash = fnv1a64_update(running_hash, &n.motor_action, sizeof(MotorAction));
+            }
 
             for (int e = 0; e < ec; e++) {
                 EdgeRecord erec;
-                erec.target        = n.edges[e].target;
-                erec.weight        = n.edges[e].weight;
+                erec.target         = n.edges[e].target;
+                erec.weight         = n.edges[e].weight;
                 erec.co_occur_count = n.edges[e].co_occur_count;
-                erec.type          = (uint8_t)n.edges[e].type;
-                fwrite(&erec, sizeof(EdgeRecord), 1, f);
+                erec.type           = (uint8_t)n.edges[e].type;
+                erec.provenance     = (uint8_t)n.edges[e].provenance;
+                erec.reserved       = 0;
+                if (fwrite(&erec, sizeof(EdgeRecord), 1, f) != 1) {
+                    fclose(f); return false;
+                }
+                running_hash = fnv1a64_update(running_hash, &erec, sizeof(EdgeRecord));
                 total_edges_written++;
             }
 
             for (int e = 0; e < iec; e++) {
                 EdgeRecord erec;
-                erec.target        = n.inverse_edges[e].target;
-                erec.weight        = n.inverse_edges[e].weight;
+                erec.target         = n.inverse_edges[e].target;
+                erec.weight         = n.inverse_edges[e].weight;
                 erec.co_occur_count = n.inverse_edges[e].co_occur_count;
-                erec.type          = (uint8_t)n.inverse_edges[e].type;
-                fwrite(&erec, sizeof(EdgeRecord), 1, f);
+                erec.type           = (uint8_t)n.inverse_edges[e].type;
+                erec.provenance     = (uint8_t)n.inverse_edges[e].provenance;
+                erec.reserved       = 0;
+                if (fwrite(&erec, sizeof(EdgeRecord), 1, f) != 1) {
+                    fclose(f); return false;
+                }
+                running_hash = fnv1a64_update(running_hash, &erec, sizeof(EdgeRecord));
                 total_edges_written++;
             }
+        }
+
+        // Block 4: Trailing FNV-1a checksum
+        uint64_t payload_fnv1a = running_hash;
+        if (fwrite(&payload_fnv1a, sizeof(uint64_t), 1, f) != 1) {
+            fclose(f); return false;
         }
 
         long file_size = ftell(f);
         fclose(f);
 
-        // brain_lock releases here, resuming all cognitive threads
-
         auto t_end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
 
-        printf("[SynapticMemory] SLEEP complete.\n");
+        printf("[SynapticMemory] SLEEP complete (v%u).\n", FPSAN_VERSION);
         printf("  File: %s\n",              filepath);
         printf("  Nodes: %d alive / %d total\n", alive_count, nc);
         printf("  Cortex: %d active clusters\n", cortex_active);
         printf("  Edges: %d total\n",       total_edges_written);
+        printf("  Checksum: 0x%016llX\n",   (unsigned long long)payload_fnv1a);
         printf("  Size: %.2f KB\n",         file_size / 1024.0);
         printf("  Time: %.3f ms\n",         ms);
         return true;
     }
 
-    // ──────────────────────────────────────────────────────────
-    // wake() — restore topology from a .fpsan file.
-    //
-    // Opens with std::unique_lock. Must be called before any
-    // cognitive threads are started, or after they are paused.
-    // Activations all start at 0.0 (cold boot).
-    // ──────────────────────────────────────────────────────────
     static bool wake(const char* filepath,
                      ClusterGraph* graph,
                      LanguageCortex* cortex)
@@ -2427,13 +2599,16 @@ struct SynapticMemory {
             fclose(f); return false;
         }
         if (header.version != FPSAN_VERSION) {
-            fprintf(stderr, "[SynapticMemory] WARNING: Version mismatch (file=%u engine=%u)\n",
+            fprintf(stderr, "[SynapticMemory] ERROR: Unsupported version (file=%u engine=%u)\n",
                 header.version, FPSAN_VERSION);
+            fclose(f); return false;
         }
 
-        // Initialise fresh brain
+        // Initialize fresh brain
         graph->init((int)header.node_count);
         cortex->init();
+
+        uint64_t running_hash = FNV1A64_OFFSET_BASIS;
 
         // Block 2: Language Cortex
         for (uint32_t i = 0; i < header.cortex_active_count; i++) {
@@ -2442,6 +2617,7 @@ struct SynapticMemory {
                 fprintf(stderr, "[SynapticMemory] ERROR: Truncated cortex at %u\n", i);
                 fclose(f); return false;
             }
+            running_hash = fnv1a64_update(running_hash, &rec, sizeof(CortexRecord));
             if (rec.cluster_id < 0 || rec.cluster_id >= LANG_CLUSTERS) continue;
             memcpy(cortex->clusters[rec.cluster_id].weights, rec.weights, LANG_WORD_DIM);
             memcpy(cortex->clusters[rec.cluster_id].accum,   rec.accum,
@@ -2454,7 +2630,7 @@ struct SynapticMemory {
         }
         cortex->rebuild_cache();
 
-        // Block 3: Topology (flat iteration)
+        // Block 3: Topology (lossless restore)
         int total_edges_read = 0;
         for (uint32_t i = 0; i < header.alive_node_count; i++) {
             NodeRecord nrec;
@@ -2462,6 +2638,7 @@ struct SynapticMemory {
                 fprintf(stderr, "[SynapticMemory] ERROR: Truncated node at %u\n", i);
                 fclose(f); return false;
             }
+            running_hash = fnv1a64_update(running_hash, &nrec, sizeof(NodeRecord));
             if (nrec.node_id < 0 || nrec.node_id >= (int)header.node_count) {
                 fprintf(stderr, "[SynapticMemory] ERROR: Bad node_id %d\n", nrec.node_id);
                 fclose(f); return false;
@@ -2470,7 +2647,21 @@ struct SynapticMemory {
             ClusterNode& n = graph->cortex_memory[nrec.node_id];
             n.alive.store(true,   std::memory_order_relaxed);
             n.activation.store(0.0f, std::memory_order_relaxed);
-            n.clamped.store(false,   std::memory_order_relaxed);
+            n.clamped.store((nrec.flags & NODE_FLAG_CLAMPED) != 0, std::memory_order_relaxed);
+            n.is_binding_node.store((nrec.flags & NODE_FLAG_BINDING) != 0, std::memory_order_relaxed);
+            n.is_motor_node.store((nrec.flags & NODE_FLAG_MOTOR) != 0, std::memory_order_relaxed);
+            n.memory_tier.store(nrec.memory_tier, std::memory_order_relaxed);
+
+            // Optional MotorAction
+            if (nrec.flags & NODE_FLAG_MOTOR) {
+                MotorAction act;
+                if (fread(&act, sizeof(MotorAction), 1, f) != 1) {
+                    fprintf(stderr, "[SynapticMemory] ERROR: Truncated motor action at node %d\n", nrec.node_id);
+                    fclose(f); return false;
+                }
+                running_hash = fnv1a64_update(running_hash, &act, sizeof(MotorAction));
+                n.motor_action = act;
+            }
 
             n.edge_count.store(nrec.edge_count, std::memory_order_relaxed);
             for (int e = 0; e < nrec.edge_count; e++) {
@@ -2479,10 +2670,12 @@ struct SynapticMemory {
                     fprintf(stderr, "[SynapticMemory] ERROR: Truncated forward edge.\n");
                     fclose(f); return false;
                 }
-                n.edges[e].target        = erec.target;
-                n.edges[e].weight        = erec.weight;
+                running_hash = fnv1a64_update(running_hash, &erec, sizeof(EdgeRecord));
+                n.edges[e].target         = erec.target;
+                n.edges[e].weight         = erec.weight;
                 n.edges[e].co_occur_count = erec.co_occur_count;
-                n.edges[e].type          = (EdgeType)erec.type;
+                n.edges[e].type           = (EdgeType)erec.type;
+                n.edges[e].provenance     = (EdgeProvenance)erec.provenance;
                 total_edges_read++;
             }
 
@@ -2493,25 +2686,40 @@ struct SynapticMemory {
                     fprintf(stderr, "[SynapticMemory] ERROR: Truncated inverse edge.\n");
                     fclose(f); return false;
                 }
-                n.inverse_edges[e].target        = erec.target;
-                n.inverse_edges[e].weight        = erec.weight;
+                running_hash = fnv1a64_update(running_hash, &erec, sizeof(EdgeRecord));
+                n.inverse_edges[e].target         = erec.target;
+                n.inverse_edges[e].weight         = erec.weight;
                 n.inverse_edges[e].co_occur_count = erec.co_occur_count;
-                n.inverse_edges[e].type          = (EdgeType)erec.type;
+                n.inverse_edges[e].type           = (EdgeType)erec.type;
+                n.inverse_edges[e].provenance     = (EdgeProvenance)erec.provenance;
                 total_edges_read++;
             }
         }
 
+        // Block 4: Checksum verification
+        uint64_t expected_hash = 0;
+        if (fread(&expected_hash, sizeof(uint64_t), 1, f) != 1) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Missing payload checksum (file truncated).\n");
+            fclose(f); return false;
+        }
+
+        if (expected_hash != running_hash) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Corrupted payload checksum mismatch: expected 0x%016llX, got 0x%016llX\n",
+                    (unsigned long long)expected_hash, (unsigned long long)running_hash);
+            fclose(f); return false;
+        }
+
         fclose(f);
-        // brain_lock releases here
 
         auto t_end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
 
-        printf("[SynapticMemory] WAKE complete.\n");
+        printf("[SynapticMemory] WAKE complete (v%u).\n", header.version);
         printf("  File: %s\n",                   filepath);
         printf("  Nodes: %u alive / %u total\n", header.alive_node_count, header.node_count);
         printf("  Cortex: %u active clusters\n", header.cortex_active_count);
         printf("  Edges: %d total\n",             total_edges_read);
+        printf("  Checksum: 0x%016llX [VALID]\n", (unsigned long long)expected_hash);
         printf("  Time: %.3f ms\n",               ms);
         printf("  All activations reset to 0.0 (cold boot).\n");
         return true;
@@ -2523,7 +2731,7 @@ struct SynapticMemory {
 ---
 
 ### File: `src/core/fpsan_cortex_harness.h`
-> **Lines:** 237 | **Size:** 10.0 KB | **Role:** Four-cortex thread harness with hybrid high-res waitable timer + microsecond spinwait tail
+> **Lines:** 254 | **Size:** 10.6 KB | **Role:** Four-cortex thread harness with hybrid high-res waitable timer + microsecond spinwait tail
 
 ```cpp
 #pragma once
@@ -2557,6 +2765,22 @@ struct SynapticMemory {
 
 #pragma comment(lib, "Winmm.lib")
 
+// ── RAII timer helpers ─────────────────────────────────────────
+struct ThreadTimerHandle {
+    HANDLE h{nullptr};
+    ~ThreadTimerHandle() noexcept {
+        if (h != nullptr && h != INVALID_HANDLE_VALUE) {
+            CloseHandle(h);
+            h = nullptr;
+        }
+    }
+};
+
+struct TimePeriodGuard {
+    TimePeriodGuard() noexcept { timeBeginPeriod(1); }
+    ~TimePeriodGuard() noexcept { timeEndPeriod(1); }
+};
+
 // ── High-resolution sleep ──────────────────────────────────────
 // Uses CreateWaitableTimerEx with TIMER_HIGH_RESOLUTION (Win10 1803+).
 // Falls back to timeBeginPeriod(1) + sleep_for on older builds.
@@ -2573,15 +2797,16 @@ inline void precise_sleep_us(long long us) {
 
     auto target_time = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(us);
 
-    // Cache the waitable timer handle per-thread to avoid repeated CreateHandle.
-    static thread_local HANDLE s_timer = nullptr;
-    if (s_timer == nullptr) {
-        s_timer = CreateWaitableTimerExW(nullptr, nullptr,
+    // Cache the waitable timer handle per-thread via RAII to avoid handle leaks on thread exit.
+    static thread_local ThreadTimerHandle s_timer_guard;
+    if (s_timer_guard.h == nullptr) {
+        s_timer_guard.h = CreateWaitableTimerExW(nullptr, nullptr,
                       CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
         // Fallback: standard waitable timer (ms-resolution)
-        if (s_timer == nullptr)
-            s_timer = CreateWaitableTimerW(nullptr, TRUE, nullptr);
+        if (s_timer_guard.h == nullptr)
+            s_timer_guard.h = CreateWaitableTimerW(nullptr, TRUE, nullptr);
     }
+    HANDLE s_timer = s_timer_guard.h;
 
     // Coarse sleep if interval is sufficiently large (> 250 us)
     long long coarse_us = us - 200;
@@ -2645,9 +2870,9 @@ struct CortexThread {
             SetThreadPriority(GetCurrentThread(), priority);
 
             // Per-thread timer resolution (Win11 22H2+ requires each thread
-            // to call timeBeginPeriod individually; belt-and-suspenders alongside
-            // the hi-res waitable timer used in precise_sleep_us).
-            timeBeginPeriod(1);
+            // to call timeBeginPeriod individually; RAII TimePeriodGuard ensures
+            // timeEndPeriod(1) is called on thread exit).
+            TimePeriodGuard period_guard;
 
             // Pin this thread to the designated logical core(s).
             if (affinity_mask != 0) {
@@ -2964,7 +3189,7 @@ inline void TemporalMemory::clear_working_slots(ClusterGraph* graph) noexcept {
 ## 📁 Perception & Safety
 
 ### File: `src/core/fpsan_lexer.h`
-> **Lines:** 952 | **Size:** 42.3 KB | **Role:** Trie lexicon POS lookup, deterministic FSM phrase grouper, SVO triple ingest
+> **Lines:** 962 | **Size:** 42.5 KB | **Role:** Trie lexicon POS lookup, deterministic FSM phrase grouper, SVO triple ingest
 
 ```cpp
 #pragma once
@@ -2980,6 +3205,7 @@ inline void TemporalMemory::clear_working_slots(ClusterGraph* graph) noexcept {
 #include <cctype>
 #include <vector>
 #include <utility>
+#include <shared_mutex>
 
 // Personality coloring helpers (implemented in fpsan_live_core.cpp)
 void apply_personality_coloring(ClusterGraph* graph, LanguageCortex* lang_cortex, std::vector<std::pair<int,float>>& out_boosts);
@@ -3034,8 +3260,10 @@ struct Lexicon {
     int pool_size;
     int pool_used;
     int word_count;
+    mutable std::shared_mutex lexicon_lock;
 
     void init(int max_nodes = 200000) {
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
         root.init();
         pool_size = max_nodes;
         pool_used = 0;
@@ -3047,6 +3275,7 @@ struct Lexicon {
     ~Lexicon() { /* intentionally leak for static lifetime */ }
 
     void destroy() {
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
         if (pool) { delete[] pool; pool = nullptr; }
     }
 
@@ -3057,6 +3286,7 @@ struct Lexicon {
 
     // Insert a word with its POS tag
     void insert(const char* word, POSTag tag) {
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
         TrieNode* cur = &root;
         for (int i = 0; word[i]; i++) {
             int c = (unsigned char)tolower(word[i]);
@@ -3074,6 +3304,7 @@ struct Lexicon {
 
     // Lookup a word's POS tag (~50ns)
     POSTag lookup(const char* word) const {
+        std::shared_lock<std::shared_mutex> lock(lexicon_lock);
         const TrieNode* cur = &root;
         for (int i = 0; word[i]; i++) {
             int c = (unsigned char)tolower(word[i]);
@@ -3737,22 +3968,31 @@ struct NativeLexer {
                 int next_word_count = 0;
 
             const ClusterNode& n = graph->node(current_node);
+            Edge n_snap[MAX_FANOUT];
+            int n_ec = n.copy_edges_snapshot(n_snap, MAX_FANOUT);
+
+            Edge pn_snap[MAX_FANOUT];
+            int pn_ec = 0;
+            if (prev_node >= 0) {
+                const ClusterNode& pn = graph->node(prev_node);
+                pn_ec = pn.copy_edges_snapshot(pn_snap, MAX_FANOUT);
+            }
+
             {
-            int n_ec = n.edge_count.load(std::memory_order_acquire);
             for (int i = 0; i < n_ec; i++) {
-                if (n.edges[i].type == EDGE_NEXT_WORD) {
+                if (n_snap[i].type == EDGE_NEXT_WORD) {
                     next_word_count++;
-                    int target = n.edges[i].target;
+                    int target = n_snap[i].target;
                     float tgt_act = graph->node(target).activation.load(std::memory_order_acquire);
                     if (tgt_act < 0.0f) continue;
 
-                    float score = n.edges[i].weight + tgt_act;
+                    float score = n_snap[i].weight + tgt_act;
 
                     // Phase 8 trust bias: when doubt is high, prefer verified sources.
                     // Wikipedia (PROV_WIKIPEDIA=2) and ConceptNet (PROV_CONCEPTNET=3)
                     // get a bonus; user/unknown provenance gets a slight penalty.
                     if (doubt_level > 0.0f) {
-                        EdgeProvenance prov = n.edges[i].provenance;
+                        EdgeProvenance prov = n_snap[i].provenance;
                         float trust_bonus = 0.0f;
                         if (prov == PROV_WIKIPEDIA || prov == PROV_CONCEPTNET)
                             trust_bonus = +0.3f * doubt_level;
@@ -3767,11 +4007,9 @@ struct NativeLexer {
                     // it means prev→current→candidate was in the original sentence.
                     // Boost the score to disambiguate at hub words like "the".
                     if (prev_node >= 0 && next_word_count > 1) {
-                        const ClusterNode& pn = graph->node(prev_node);
-                        int pn_ec = pn.edge_count.load(std::memory_order_acquire);
                         for (int j = 0; j < pn_ec; j++) {
-                            if (pn.edges[j].target == target && pn.edges[j].type == EDGE_TEMPORAL) {
-                                score += pn.edges[j].weight; // +0.15f skip-gram bonus
+                            if (pn_snap[j].target == target && pn_snap[j].type == EDGE_TEMPORAL) {
+                                score += pn_snap[j].weight; // +0.15f skip-gram bonus
                                 break;
                             }
                         }
@@ -3800,21 +4038,18 @@ struct NativeLexer {
             // priming helps. If it's ambiguous but we have a clear path, just pick it.
             if (next_word_count > 1 && word_count >= 2) {
                 float second_best = -999.0f;
-                int n_ec2 = n.edge_count.load(std::memory_order_acquire);
-                for (int i = 0; i < n_ec2; i++) {
-                    if (n.edges[i].type == EDGE_NEXT_WORD) {
-                        int target = n.edges[i].target;
+                for (int i = 0; i < n_ec; i++) {
+                    if (n_snap[i].type == EDGE_NEXT_WORD) {
+                        int target = n_snap[i].target;
                         if (target == best_neighbor) continue;
                         float tact = graph->node(target).activation.load(std::memory_order_acquire);
                         if (tact < 0.0f) continue;
-                        float score = n.edges[i].weight + tact;
+                        float score = n_snap[i].weight + tact;
                         // Apply same skip-gram bonus for fair comparison
                         if (prev_node >= 0) {
-                            const ClusterNode& pn = graph->node(prev_node);
-                            int pn_ec2 = pn.edge_count.load(std::memory_order_acquire);
-                            for (int j = 0; j < pn_ec2; j++) {
-                                if (pn.edges[j].target == target && pn.edges[j].type == EDGE_TEMPORAL) {
-                                    score += pn.edges[j].weight;
+                            for (int j = 0; j < pn_ec; j++) {
+                                if (pn_snap[j].target == target && pn_snap[j].type == EDGE_TEMPORAL) {
+                                    score += pn_snap[j].weight;
                                     break;
                                 }
                             }
@@ -3871,8 +4106,8 @@ struct NativeLexer {
     static int levenshtein_dist(const char* a, const char* b) noexcept {
         int la = (int)strlen(a), lb = (int)strlen(b);
         if (abs(la - lb) > 2) return 99; // fast reject
-        // Simple full-matrix DP (small words, so fast)
-        static int dp[65][65];
+        if (la > 64 || lb > 64) return 99;
+        int dp[65][65];
         for (int i = 0; i <= la; i++) dp[i][0] = i;
         for (int j = 0; j <= lb; j++) dp[0][j] = j;
         for (int i = 1; i <= la; i++)
@@ -3890,7 +4125,7 @@ struct NativeLexer {
                                     float base_voltage = 0.8f,
                                     int max_neighbors = 3) noexcept {
         struct Cand { int id; int dist; };
-        static Cand cands[32];
+        Cand cands[32];
         int nc_lang = 0;
 
         // Collect candidates with edit distance 1
@@ -4961,7 +5196,7 @@ struct MotorCortex {
 ---
 
 ### File: `src/core/fpsan_drives.h`
-> **Lines:** 401 | **Size:** 15.5 KB | **Role:** Homeostatic drives (boredom, curiosity, engagement) & autonomous goal triggers
+> **Lines:** 400 | **Size:** 15.4 KB | **Role:** Homeostatic drives (boredom, curiosity, engagement) & autonomous goal triggers
 
 ```cpp
 #pragma once
@@ -4991,6 +5226,7 @@ struct MotorCortex {
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <string>
 
 struct HomeostaticDrives {
     // ── Drive Levels (0.0 to 1.0) ──
@@ -5168,17 +5404,15 @@ struct HomeostaticDrives {
 
     // Returns the most curiosity-urgent topic and pops it.
     // Call this after should_fetch_knowledge() returns true.
-    const char* pop_fetch_topic() noexcept {
-        if (unknown_word_count == 0) return nullptr;
+    std::string pop_fetch_topic() {
+        if (unknown_word_count == 0) return {};
         // Always pop index 0 (FIFO — oldest curiosity item first)
-        static char topic_buf[64];
-        strncpy(topic_buf, unknown_words[0], 63);
-        topic_buf[63] = '\0';
+        std::string res = unknown_words[0];
         // Shift remaining
         for (int i = 0; i + 1 < unknown_word_count; i++)
             memcpy(unknown_words[i], unknown_words[i+1], 64);
         unknown_word_count--;
-        return topic_buf;
+        return res;
     }
 
     // Called when the research pipeline successfully ingested new knowledge.
@@ -5462,7 +5696,7 @@ inline void neuromod_set_plasticity_ablation_bypass(bool on) noexcept {
 ---
 
 ### File: `src/core/fpsan_world_model.h`
-> **Lines:** 63 | **Size:** 2.1 KB | **Role:** Graph-walked transition prior: greedy next-step prediction via CAUSES/TEMPORAL edges
+> **Lines:** 64 | **Size:** 2.1 KB | **Role:** Graph-walked transition prior: greedy next-step prediction via CAUSES/TEMPORAL edges
 
 ```cpp
 #pragma once
@@ -5493,12 +5727,13 @@ inline WorldModelStep world_model_predict_next(ClusterGraph* graph, int state_id
         int best = -1;
         float bw = 0.f;
         const ClusterNode& nd = graph->node(state_id);
-        int ec = nd.edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int ec = nd.copy_edges_snapshot(snap, MAX_FANOUT);
         for (int e = 0; e < ec; ++e) {
-            if (nd.edges[e].type != et) continue;
-            if (nd.edges[e].weight > bw) {
-                bw = nd.edges[e].weight;
-                best = nd.edges[e].target;
+            if (snap[e].type != et) continue;
+            if (snap[e].weight > bw) {
+                bw = snap[e].weight;
+                best = snap[e].target;
             }
         }
         return std::make_pair(best, bw);
@@ -5875,7 +6110,7 @@ struct MetamorphicEngine {
 ---
 
 ### File: `src/core/fpsan_san_scheduler.h`
-> **Lines:** 218 | **Size:** 7.4 KB | **Role:** Spiking Asynchronous Network event queue & discrete spike dispatcher
+> **Lines:** 219 | **Size:** 7.4 KB | **Role:** Spiking Asynchronous Network event queue & discrete spike dispatcher
 
 ```cpp
 // ============================================================
@@ -6070,12 +6305,13 @@ private:
         if (src < 0 || src >= nc) return;
 
         const ClusterNode& nd = graph_->node(src);
-        const int ec = nd.edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        const int ec = nd.copy_edges_snapshot(snap, MAX_FANOUT);
 
         // Deterministic, bounded propagation: only forward edges, capped by MAX_FANOUT.
         for (int i = 0; i < ec; ++i) {
-            const int tgt = nd.edges[i].target;
-            const float w = nd.edges[i].weight;
+            const int tgt = snap[i].target;
+            const float w = snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
 
             // Conservative scaling: keep legacy activation stable while enabling async spikes.
@@ -6666,7 +6902,7 @@ struct Identity {
 ---
 
 ### File: `src/core/fpsan_speaker.h`
-> **Lines:** 188 | **Size:** 6.0 KB | **Role:** Predicate target extraction and natural language response assembly
+> **Lines:** 189 | **Size:** 6.0 KB | **Role:** Predicate target extraction and natural language response assembly
 
 ```cpp
 #pragma once
@@ -6727,13 +6963,14 @@ inline bool speaker_pick_predicate_target(
     if (subject >= nc) return false;
 
     const ClusterNode& nd = graph->node(subject);
-    const int ec = nd.edge_count.load(std::memory_order_acquire);
+    Edge snap[MAX_FANOUT];
+    const int ec = nd.copy_edges_snapshot(snap, MAX_FANOUT);
     int best = -1;
     float best_s = -1.f;
     EdgeProvenance best_p = PROV_UNKNOWN;
 
     for (int i = 0; i < ec; ++i) {
-        const Edge& e = nd.edges[i];
+        const Edge& e = snap[i];
         if (e.type != et) continue;
         const float tw = speaker_provenance_trust(e.provenance);
         if (tw < 0.f || tw < min_trust) continue;

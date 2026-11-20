@@ -11,6 +11,7 @@
 #include <cctype>
 #include <vector>
 #include <utility>
+#include <shared_mutex>
 
 // Personality coloring helpers (implemented in fpsan_live_core.cpp)
 void apply_personality_coloring(ClusterGraph* graph, LanguageCortex* lang_cortex, std::vector<std::pair<int,float>>& out_boosts);
@@ -65,8 +66,10 @@ struct Lexicon {
     int pool_size;
     int pool_used;
     int word_count;
+    mutable std::shared_mutex lexicon_lock;
 
     void init(int max_nodes = 200000) {
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
         root.init();
         pool_size = max_nodes;
         pool_used = 0;
@@ -78,6 +81,7 @@ struct Lexicon {
     ~Lexicon() { /* intentionally leak for static lifetime */ }
 
     void destroy() {
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
         if (pool) { delete[] pool; pool = nullptr; }
     }
 
@@ -88,6 +92,7 @@ struct Lexicon {
 
     // Insert a word with its POS tag
     void insert(const char* word, POSTag tag) {
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
         TrieNode* cur = &root;
         for (int i = 0; word[i]; i++) {
             int c = (unsigned char)tolower(word[i]);
@@ -105,6 +110,7 @@ struct Lexicon {
 
     // Lookup a word's POS tag (~50ns)
     POSTag lookup(const char* word) const {
+        std::shared_lock<std::shared_mutex> lock(lexicon_lock);
         const TrieNode* cur = &root;
         for (int i = 0; word[i]; i++) {
             int c = (unsigned char)tolower(word[i]);
@@ -768,22 +774,31 @@ struct NativeLexer {
                 int next_word_count = 0;
 
             const ClusterNode& n = graph->node(current_node);
+            Edge n_snap[MAX_FANOUT];
+            int n_ec = n.copy_edges_snapshot(n_snap, MAX_FANOUT);
+
+            Edge pn_snap[MAX_FANOUT];
+            int pn_ec = 0;
+            if (prev_node >= 0) {
+                const ClusterNode& pn = graph->node(prev_node);
+                pn_ec = pn.copy_edges_snapshot(pn_snap, MAX_FANOUT);
+            }
+
             {
-            int n_ec = n.edge_count.load(std::memory_order_acquire);
             for (int i = 0; i < n_ec; i++) {
-                if (n.edges[i].type == EDGE_NEXT_WORD) {
+                if (n_snap[i].type == EDGE_NEXT_WORD) {
                     next_word_count++;
-                    int target = n.edges[i].target;
+                    int target = n_snap[i].target;
                     float tgt_act = graph->node(target).activation.load(std::memory_order_acquire);
                     if (tgt_act < 0.0f) continue;
 
-                    float score = n.edges[i].weight + tgt_act;
+                    float score = n_snap[i].weight + tgt_act;
 
                     // Phase 8 trust bias: when doubt is high, prefer verified sources.
                     // Wikipedia (PROV_WIKIPEDIA=2) and ConceptNet (PROV_CONCEPTNET=3)
                     // get a bonus; user/unknown provenance gets a slight penalty.
                     if (doubt_level > 0.0f) {
-                        EdgeProvenance prov = n.edges[i].provenance;
+                        EdgeProvenance prov = n_snap[i].provenance;
                         float trust_bonus = 0.0f;
                         if (prov == PROV_WIKIPEDIA || prov == PROV_CONCEPTNET)
                             trust_bonus = +0.3f * doubt_level;
@@ -798,11 +813,9 @@ struct NativeLexer {
                     // it means prev→current→candidate was in the original sentence.
                     // Boost the score to disambiguate at hub words like "the".
                     if (prev_node >= 0 && next_word_count > 1) {
-                        const ClusterNode& pn = graph->node(prev_node);
-                        int pn_ec = pn.edge_count.load(std::memory_order_acquire);
                         for (int j = 0; j < pn_ec; j++) {
-                            if (pn.edges[j].target == target && pn.edges[j].type == EDGE_TEMPORAL) {
-                                score += pn.edges[j].weight; // +0.15f skip-gram bonus
+                            if (pn_snap[j].target == target && pn_snap[j].type == EDGE_TEMPORAL) {
+                                score += pn_snap[j].weight; // +0.15f skip-gram bonus
                                 break;
                             }
                         }
@@ -831,21 +844,18 @@ struct NativeLexer {
             // priming helps. If it's ambiguous but we have a clear path, just pick it.
             if (next_word_count > 1 && word_count >= 2) {
                 float second_best = -999.0f;
-                int n_ec2 = n.edge_count.load(std::memory_order_acquire);
-                for (int i = 0; i < n_ec2; i++) {
-                    if (n.edges[i].type == EDGE_NEXT_WORD) {
-                        int target = n.edges[i].target;
+                for (int i = 0; i < n_ec; i++) {
+                    if (n_snap[i].type == EDGE_NEXT_WORD) {
+                        int target = n_snap[i].target;
                         if (target == best_neighbor) continue;
                         float tact = graph->node(target).activation.load(std::memory_order_acquire);
                         if (tact < 0.0f) continue;
-                        float score = n.edges[i].weight + tact;
+                        float score = n_snap[i].weight + tact;
                         // Apply same skip-gram bonus for fair comparison
                         if (prev_node >= 0) {
-                            const ClusterNode& pn = graph->node(prev_node);
-                            int pn_ec2 = pn.edge_count.load(std::memory_order_acquire);
-                            for (int j = 0; j < pn_ec2; j++) {
-                                if (pn.edges[j].target == target && pn.edges[j].type == EDGE_TEMPORAL) {
-                                    score += pn.edges[j].weight;
+                            for (int j = 0; j < pn_ec; j++) {
+                                if (pn_snap[j].target == target && pn_snap[j].type == EDGE_TEMPORAL) {
+                                    score += pn_snap[j].weight;
                                     break;
                                 }
                             }
@@ -902,8 +912,8 @@ struct NativeLexer {
     static int levenshtein_dist(const char* a, const char* b) noexcept {
         int la = (int)strlen(a), lb = (int)strlen(b);
         if (abs(la - lb) > 2) return 99; // fast reject
-        // Simple full-matrix DP (small words, so fast)
-        static int dp[65][65];
+        if (la > 64 || lb > 64) return 99;
+        int dp[65][65];
         for (int i = 0; i <= la; i++) dp[i][0] = i;
         for (int j = 0; j <= lb; j++) dp[0][j] = j;
         for (int i = 1; i <= la; i++)
@@ -921,7 +931,7 @@ struct NativeLexer {
                                     float base_voltage = 0.8f,
                                     int max_neighbors = 3) noexcept {
         struct Cand { int id; int dist; };
-        static Cand cands[32];
+        Cand cands[32];
         int nc_lang = 0;
 
         // Collect candidates with edit distance 1

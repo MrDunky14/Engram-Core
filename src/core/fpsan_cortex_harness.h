@@ -29,6 +29,22 @@
 
 #pragma comment(lib, "Winmm.lib")
 
+// ── RAII timer helpers ─────────────────────────────────────────
+struct ThreadTimerHandle {
+    HANDLE h{nullptr};
+    ~ThreadTimerHandle() noexcept {
+        if (h != nullptr && h != INVALID_HANDLE_VALUE) {
+            CloseHandle(h);
+            h = nullptr;
+        }
+    }
+};
+
+struct TimePeriodGuard {
+    TimePeriodGuard() noexcept { timeBeginPeriod(1); }
+    ~TimePeriodGuard() noexcept { timeEndPeriod(1); }
+};
+
 // ── High-resolution sleep ──────────────────────────────────────
 // Uses CreateWaitableTimerEx with TIMER_HIGH_RESOLUTION (Win10 1803+).
 // Falls back to timeBeginPeriod(1) + sleep_for on older builds.
@@ -45,15 +61,16 @@ inline void precise_sleep_us(long long us) {
 
     auto target_time = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(us);
 
-    // Cache the waitable timer handle per-thread to avoid repeated CreateHandle.
-    static thread_local HANDLE s_timer = nullptr;
-    if (s_timer == nullptr) {
-        s_timer = CreateWaitableTimerExW(nullptr, nullptr,
+    // Cache the waitable timer handle per-thread via RAII to avoid handle leaks on thread exit.
+    static thread_local ThreadTimerHandle s_timer_guard;
+    if (s_timer_guard.h == nullptr) {
+        s_timer_guard.h = CreateWaitableTimerExW(nullptr, nullptr,
                       CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
         // Fallback: standard waitable timer (ms-resolution)
-        if (s_timer == nullptr)
-            s_timer = CreateWaitableTimerW(nullptr, TRUE, nullptr);
+        if (s_timer_guard.h == nullptr)
+            s_timer_guard.h = CreateWaitableTimerW(nullptr, TRUE, nullptr);
     }
+    HANDLE s_timer = s_timer_guard.h;
 
     // Coarse sleep if interval is sufficiently large (> 250 us)
     long long coarse_us = us - 200;
@@ -117,9 +134,9 @@ struct CortexThread {
             SetThreadPriority(GetCurrentThread(), priority);
 
             // Per-thread timer resolution (Win11 22H2+ requires each thread
-            // to call timeBeginPeriod individually; belt-and-suspenders alongside
-            // the hi-res waitable timer used in precise_sleep_us).
-            timeBeginPeriod(1);
+            // to call timeBeginPeriod individually; RAII TimePeriodGuard ensures
+            // timeEndPeriod(1) is called on thread exit).
+            TimePeriodGuard period_guard;
 
             // Pin this thread to the designated logical core(s).
             if (affinity_mask != 0) {

@@ -34,8 +34,8 @@ if not exist "%CD%\build\m3_core.obj" (
 set M3OBJS=build\m3_api_libc.obj build\m3_bind.obj build\m3_code.obj build\m3_compile.obj build\m3_core.obj build\m3_env.obj build\m3_exec.obj build\m3_function.obj build\m3_info.obj build\m3_module.obj build\m3_parse.obj
 
 echo [engram] compiling...
-cl /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core /c src\core\fpsan_wasm_sandbox.cpp /Fobuild\fpsan_wasm_sandbox.obj || exit /b 1
-cl /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core ^
+cl /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core /c src\core\fpsan_wasm_sandbox.cpp /Fobuild\fpsan_wasm_sandbox.obj || exit /b 1
+cl /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core ^
   src\fpsan_live_core.cpp build\fpsan_wasm_sandbox.obj %M3OBJS% ^
   /Fobuild\engram.obj /Febuild\engram.exe ^
   /link /STACK:16777216 ^

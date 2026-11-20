@@ -56,13 +56,14 @@ inline bool speaker_pick_predicate_target(
     if (subject >= nc) return false;
 
     const ClusterNode& nd = graph->node(subject);
-    const int ec = nd.edge_count.load(std::memory_order_acquire);
+    Edge snap[MAX_FANOUT];
+    const int ec = nd.copy_edges_snapshot(snap, MAX_FANOUT);
     int best = -1;
     float best_s = -1.f;
     EdgeProvenance best_p = PROV_UNKNOWN;
 
     for (int i = 0; i < ec; ++i) {
-        const Edge& e = nd.edges[i];
+        const Edge& e = snap[i];
         if (e.type != et) continue;
         const float tw = speaker_provenance_trust(e.provenance);
         if (tw < 0.f || tw < min_trust) continue;

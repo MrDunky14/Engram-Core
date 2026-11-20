@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <unordered_map>
+#include <shared_mutex>
 
 // Language Parameters
 const int LANG_CHAR_DIM = 64;   // 8x8 spike grid
@@ -76,8 +77,10 @@ struct LanguageCortex {
 
     Cluster clusters[LANG_CLUSTERS];
     std::unordered_map<std::string, int> word_cache;
+    mutable std::shared_mutex cortex_lock;
 
     void init() {
+        std::unique_lock<std::shared_mutex> lock(cortex_lock);
         word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             memset(clusters[c].weights, 0, LANG_WORD_DIM);
@@ -90,6 +93,7 @@ struct LanguageCortex {
     }
 
     void rebuild_cache() {
+        std::unique_lock<std::shared_mutex> lock(cortex_lock);
         word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             if (clusters[c].active && clusters[c].word_label[0] != '\0') {
@@ -98,13 +102,15 @@ struct LanguageCortex {
         }
     }
 
-    int active_count() {
+    int active_count() const {
+        std::shared_lock<std::shared_mutex> lock(cortex_lock);
         int n = 0;
         for (int c = 0; c < LANG_CLUSTERS; c++) if (clusters[c].active) n++;
         return n;
     }
 
     const char* get_word(int cluster_id) const {
+        std::shared_lock<std::shared_mutex> lock(cortex_lock);
         if (cluster_id >= 0 && cluster_id < LANG_CLUSTERS && clusters[cluster_id].active) {
             return clusters[cluster_id].word_label;
         }
@@ -113,7 +119,46 @@ struct LanguageCortex {
 
     // Perceive a 256-dim word hash
     int perceive(const int8_t* input, bool learn, const char* word = nullptr) {
-        // Fast path: exact label lookup
+        // Fast path: exact label lookup under shared lock
+        if (word != nullptr && word[0] != '\0') {
+            std::shared_lock<std::shared_mutex> rlock(cortex_lock);
+            auto it = word_cache.find(word);
+            if (it != word_cache.end()) {
+                return it->second;
+            }
+        }
+
+        if (!learn) {
+            std::shared_lock<std::shared_mutex> rlock(cortex_lock);
+            if (word != nullptr && word[0] != '\0') {
+                auto it = word_cache.find(word);
+                if (it != word_cache.end()) return it->second;
+            }
+
+            int best = -1;
+            float best_sim = -9999.0f;
+            float vigilance = 0.85f;
+
+            for (int c = 0; c < LANG_CLUSTERS; c++) {
+                if (!clusters[c].active) continue;
+                int score = 0, act = 0;
+                for (int i = 0; i < LANG_WORD_DIM; i++) {
+                    if (input[i] != 0 || clusters[c].weights[i] != 0) {
+                        if (clusters[c].weights[i] == input[i]) score++; else score--;
+                        act++;
+                    }
+                }
+                if (act > 0) {
+                    float sim = (float)score / act;
+                    if (sim > best_sim) { best_sim = sim; best = c; }
+                }
+            }
+            if (best_sim >= vigilance) return best;
+            return -1;
+        }
+
+        // Exclusive lock for mutation path (learn == true)
+        std::unique_lock<std::shared_mutex> wlock(cortex_lock);
         if (word != nullptr && word[0] != '\0') {
             auto it = word_cache.find(word);
             if (it != word_cache.end()) {
@@ -123,8 +168,6 @@ struct LanguageCortex {
 
         int best = -1, first_empty = -1;
         float best_sim = -9999.0f;
-
-        // Language requires HIGH vigilance (0.85) to distinguish very similar words
         float vigilance = 0.85f;
 
         for (int c = 0; c < LANG_CLUSTERS; c++) {
@@ -145,10 +188,10 @@ struct LanguageCortex {
             }
         }
 
-        if (best_sim < vigilance && first_empty != -1 && learn) best = first_empty;
-        else if (best_sim < vigilance && !learn) return -1;
+        if (best_sim < vigilance && first_empty != -1) best = first_empty;
+        else if (best_sim < vigilance) return -1;
 
-        if (best != -1 && learn && !clusters[best].frozen) {
+        if (best != -1 && !clusters[best].frozen) {
             clusters[best].sample_count++;
             float lr = std::max(0.1f, 1.0f / (float)clusters[best].sample_count);
             for (int i = 0; i < LANG_WORD_DIM; i++) {
@@ -163,7 +206,6 @@ struct LanguageCortex {
                 clusters[best].word_label[63] = '\0';
                 word_cache[word] = best;
             }
-            // Language freezes very fast (5 exposures)
             if (clusters[best].sample_count >= 5)
                 clusters[best].frozen = true;
         } else if (best != -1 && word != nullptr && word[0] != '\0') {

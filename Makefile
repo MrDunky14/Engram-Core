@@ -4,7 +4,7 @@
 # ==============================================================================
 
 CXX = cl
-CXXFLAGS = /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src/core /I src/benchmark /I vendor/sqlite3/sqlite-amalgamation-3470200
+CXXFLAGS = /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src/core /I src/benchmark /I vendor/sqlite3/sqlite-amalgamation-3470200
 LIBS = Psapi.lib Winmm.lib user32.lib
 STACK = /link /STACK:16777216
 

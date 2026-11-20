@@ -10,7 +10,7 @@ if errorlevel 1 exit /b 1
 if not exist "%ROOT%\build" mkdir "%ROOT%\build"
 
 set COREINC=/I "%ROOT%\src\core" /I "%ROOT%\src\benchmark"
-set FLAGS=/std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS
+set FLAGS=/std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS
 set WASM3_SRC=%ROOT%\vendor\wasm3\upstream\source
 
 if not exist "%ROOT%\build\m3_core.obj" call :build_wasm3_objs

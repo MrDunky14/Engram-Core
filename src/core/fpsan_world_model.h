@@ -26,12 +26,13 @@ inline WorldModelStep world_model_predict_next(ClusterGraph* graph, int state_id
         int best = -1;
         float bw = 0.f;
         const ClusterNode& nd = graph->node(state_id);
-        int ec = nd.edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int ec = nd.copy_edges_snapshot(snap, MAX_FANOUT);
         for (int e = 0; e < ec; ++e) {
-            if (nd.edges[e].type != et) continue;
-            if (nd.edges[e].weight > bw) {
-                bw = nd.edges[e].weight;
-                best = nd.edges[e].target;
+            if (snap[e].type != et) continue;
+            if (snap[e].weight > bw) {
+                bw = snap[e].weight;
+                best = snap[e].target;
             }
         }
         return std::make_pair(best, bw);

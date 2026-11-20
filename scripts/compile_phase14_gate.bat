@@ -33,7 +33,7 @@ for %%F in (
   cl %OPTS% /c "%W%\%%F.c" /Fo"%ROOT%\build\%%F.obj" || exit /b 1
 )
 
-cl /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS ^
+cl /nologo /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS ^
   /I "%ROOT%\src\core" /I "%ROOT%\src\benchmark" ^
   "%ROOT%\src\benchmark\phase14_gate.cpp" "%ROOT%\src\core\fpsan_wasm_sandbox.cpp" ^
   "%ROOT%\build\m3_api_libc.obj" "%ROOT%\build\m3_bind.obj" ^

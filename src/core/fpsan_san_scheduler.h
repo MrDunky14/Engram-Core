@@ -190,12 +190,13 @@ private:
         if (src < 0 || src >= nc) return;
 
         const ClusterNode& nd = graph_->node(src);
-        const int ec = nd.edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        const int ec = nd.copy_edges_snapshot(snap, MAX_FANOUT);
 
         // Deterministic, bounded propagation: only forward edges, capped by MAX_FANOUT.
         for (int i = 0; i < ec; ++i) {
-            const int tgt = nd.edges[i].target;
-            const float w = nd.edges[i].weight;
+            const int tgt = snap[i].target;
+            const float w = snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
 
             // Conservative scaling: keep legacy activation stable while enabling async spikes.

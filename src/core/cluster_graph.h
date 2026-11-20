@@ -28,6 +28,11 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include <bit>
+#include <array>
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 #include "fpsan_motor.h"
 #include "fpsan_neuromod.h"
 
@@ -129,6 +134,7 @@ struct alignas(64) ClusterNode {
     // ── Hot fields (cache line 0) ────────────────────────────
     std::atomic<float> activation{0.0f};
     std::atomic<bool>  alive{false};
+    std::atomic<bool>  constructed{false};
     std::atomic<bool>  clamped{false};
     std::atomic<bool>  is_binding_node{false};
     std::atomic<bool>  fired_this_query{false};
@@ -137,11 +143,13 @@ struct alignas(64) ClusterNode {
     /// Phase 11: MEMORY_TIER_* constants
     std::atomic<uint8_t> memory_tier{0};
 
-    std::atomic<int>   edge_count{0};
-    std::atomic_flag   edge_lock{};          // micro-spinlock for add_edge
+    std::atomic<int>      edge_count{0};
+    std::atomic_flag      edge_lock{};          // micro-spinlock for add_edge
+    std::atomic<uint32_t> edge_seq{0};          // seqlock counter for lock-free torn-free reads
 
-    std::atomic<int>   inverse_edge_count{0};
-    std::atomic_flag   inverse_edge_lock{};  // micro-spinlock for add_inverse_edge
+    std::atomic<int>      inverse_edge_count{0};
+    std::atomic_flag      inverse_edge_lock{};  // micro-spinlock for add_inverse_edge
+    std::atomic<uint32_t> inverse_edge_seq{0};  // seqlock counter for inverse reads
 
     // ── Motor payload (cold, only read when is_motor_node==true) ─
     MotorAction motor_action;
@@ -156,7 +164,7 @@ struct alignas(64) ClusterNode {
     // ─────────────────────────────────────────────────────────
     void init() noexcept {
         activation.store(0.0f, std::memory_order_relaxed);
-        alive.store(true,      std::memory_order_relaxed);
+        alive.store(false,     std::memory_order_relaxed);
         clamped.store(false,   std::memory_order_relaxed);
         is_binding_node.store(false, std::memory_order_relaxed);
         fired_this_query.store(false, std::memory_order_relaxed);
@@ -164,35 +172,84 @@ struct alignas(64) ClusterNode {
         memory_tier.store(MEMORY_TIER_TRANSIENT, std::memory_order_relaxed);
         edge_count.store(0,         std::memory_order_relaxed);
         inverse_edge_count.store(0, std::memory_order_relaxed);
+        edge_seq.store(0,           std::memory_order_relaxed);
+        inverse_edge_seq.store(0,   std::memory_order_relaxed);
         memset(&motor_action, 0, sizeof(MotorAction));
-        // edge_lock and inverse_edge_lock are cleared by value-init / ATOMIC_FLAG_INIT
+        memset(edges, 0, sizeof(edges));
+        memset(inverse_edges, 0, sizeof(inverse_edges));
     }
 
     // ─────────────────────────────────────────────────────────
-    // add_voltage() — thread-safe floating-point accumulation.
-    // CAS loop: no torn writes. Multiple cortices can spike the
-    // same node simultaneously without corruption.
+    // add_voltage() — C++23 atomic floating-point fetch_add.
     // ─────────────────────────────────────────────────────────
     void add_voltage(float dv) noexcept {
-        float old = activation.load(std::memory_order_relaxed);
-        float desired;
-        do {
-            desired = old + dv;
-        } while (!activation.compare_exchange_weak(
-            old, desired,
-            std::memory_order_release,
-            std::memory_order_relaxed));
+        activation.fetch_add(dv, std::memory_order_acq_rel);
     }
 
     // ─────────────────────────────────────────────────────────
-    // add_edge() — spinlock-protected edge insertion/update.
-    // Readers in spread_activation are lock-free; they may see
-    // a momentarily-stale order but never a torn slot.
+    // Seqlock snapshots: bounded copy for torn-free edge traversal
+    // ─────────────────────────────────────────────────────────
+    int copy_edges_snapshot(Edge* out, int max_n) const noexcept {
+        for (int spin = 0;; ++spin) {
+            uint32_t s1 = edge_seq.load(std::memory_order_acquire);
+            if (s1 & 1u) {
+                if (spin > 64) std::this_thread::yield();
+                else {
+                    #if defined(_MSC_VER)
+                    _mm_pause();
+                    #else
+                    std::this_thread::yield();
+                    #endif
+                }
+                continue;
+            }
+            int ec = edge_count.load(std::memory_order_relaxed);
+            int n = (ec < max_n) ? ec : max_n;
+            for (int i = 0; i < n; i++) {
+                out[i] = edges[i];
+            }
+            std::atomic_thread_fence(std::memory_order_acquire);
+            uint32_t s2 = edge_seq.load(std::memory_order_acquire);
+            if (s1 == s2) return n;
+            if (spin > 64) std::this_thread::yield();
+        }
+    }
+
+    int copy_inverse_edges_snapshot(Edge* out, int max_n) const noexcept {
+        for (int spin = 0;; ++spin) {
+            uint32_t s1 = inverse_edge_seq.load(std::memory_order_acquire);
+            if (s1 & 1u) {
+                if (spin > 64) std::this_thread::yield();
+                else {
+                    #if defined(_MSC_VER)
+                    _mm_pause();
+                    #else
+                    std::this_thread::yield();
+                    #endif
+                }
+                continue;
+            }
+            int ec = inverse_edge_count.load(std::memory_order_relaxed);
+            int n = (ec < max_n) ? ec : max_n;
+            for (int i = 0; i < n; i++) {
+                out[i] = inverse_edges[i];
+            }
+            std::atomic_thread_fence(std::memory_order_acquire);
+            uint32_t s2 = inverse_edge_seq.load(std::memory_order_acquire);
+            if (s1 == s2) return n;
+            if (spin > 64) std::this_thread::yield();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // add_edge() — spinlock-protected edge insertion/update with seqlock sequencing.
     // ─────────────────────────────────────────────────────────
     void add_edge(int target_id, float strength, EdgeType etype = EDGE_TEMPORAL,
                   EdgeProvenance prov = PROV_UNKNOWN) noexcept {
         while (edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+
+        edge_seq.fetch_add(1, std::memory_order_release);
 
         int ec = edge_count.load(std::memory_order_relaxed);
 
@@ -203,6 +260,7 @@ struct alignas(64) ClusterNode {
                 edges[i].co_occur_count++;
                 if (prov != PROV_UNKNOWN) edges[i].provenance = prov;
                 _sort_edges(ec);
+                edge_seq.fetch_add(1, std::memory_order_release);
                 edge_lock.clear(std::memory_order_release);
                 return;
             }
@@ -218,12 +276,15 @@ struct alignas(64) ClusterNode {
             }
         }
         _sort_edges(ec);
+        edge_seq.fetch_add(1, std::memory_order_release);
         edge_lock.clear(std::memory_order_release);
     }
 
     void add_inverse_edge(int target_id, float strength, EdgeType etype = EDGE_TEMPORAL) noexcept {
         while (inverse_edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
 
         int ec = inverse_edge_count.load(std::memory_order_relaxed);
 
@@ -233,6 +294,7 @@ struct alignas(64) ClusterNode {
                 inverse_edges[i].weight  = std::min(inverse_edges[i].weight, 5.0f);
                 inverse_edges[i].co_occur_count++;
                 _sort_inv_edges(ec);
+                inverse_edge_seq.fetch_add(1, std::memory_order_release);
                 inverse_edge_lock.clear(std::memory_order_release);
                 return;
             }
@@ -248,33 +310,40 @@ struct alignas(64) ClusterNode {
             }
         }
         _sort_inv_edges(ec);
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
         inverse_edge_lock.clear(std::memory_order_release);
     }
 
     int count_edges_of_type(EdgeType etype) const noexcept {
-        int n = 0, ec = edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int ec = copy_edges_snapshot(snap, MAX_FANOUT);
+        int n = 0;
         for (int i = 0; i < ec; i++)
-            if (edges[i].type == etype) n++;
+            if (snap[i].type == etype) n++;
         return n;
     }
 
     void prune() noexcept {
         while (edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+        edge_seq.fetch_add(1, std::memory_order_release);
         int ec = edge_count.load(std::memory_order_relaxed);
         int nc = 0;
         for (int i = 0; i < ec; i++)
             if (edges[i].weight >= EDGE_PRUNE) edges[nc++] = edges[i];
         edge_count.store(nc, std::memory_order_relaxed);
+        edge_seq.fetch_add(1, std::memory_order_release);
         edge_lock.clear(std::memory_order_release);
 
         while (inverse_edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
         int iec = inverse_edge_count.load(std::memory_order_relaxed);
         int nic = 0;
         for (int i = 0; i < iec; i++)
             if (inverse_edges[i].weight >= EDGE_PRUNE) inverse_edges[nic++] = inverse_edges[i];
         inverse_edge_count.store(nic, std::memory_order_relaxed);
+        inverse_edge_seq.fetch_add(1, std::memory_order_release);
         inverse_edge_lock.clear(std::memory_order_release);
     }
 
@@ -378,6 +447,7 @@ struct ClusterGraph {
         void* raw = _aligned_malloc(sizeof(ClusterNode) * CORTEX_CAPACITY,
                                     alignof(ClusterNode));
         if (!raw) throw std::bad_alloc();
+        memset(raw, 0, sizeof(ClusterNode) * CORTEX_CAPACITY);
         _cortex_raw   = std::unique_ptr<void, RawDeleter>(raw);
         cortex_memory = static_cast<ClusterNode*>(raw);
 
@@ -399,7 +469,8 @@ struct ClusterGraph {
         for (int i = 0; i < actual; i++) {
             new (&cortex_memory[i]) ClusterNode();  // placement-new (default ctor)
             cortex_memory[i].init();
-            cortex_memory[i].alive.store(true, std::memory_order_relaxed);
+            cortex_memory[i].constructed.store(true, std::memory_order_release);
+            cortex_memory[i].alive.store(true, std::memory_order_release);
             free_next[i].store(-1, std::memory_order_relaxed);
         }
         node_count.store(actual, std::memory_order_release);
@@ -425,6 +496,7 @@ struct ClusterGraph {
                     std::memory_order_release,
                     std::memory_order_acquire)) {
                 cortex_memory[id].init();
+                cortex_memory[id].alive.store(true, std::memory_order_release);
                 return id;
             }
         }
@@ -435,9 +507,13 @@ struct ClusterGraph {
             node_count.fetch_sub(1, std::memory_order_relaxed);
             return -1;
         }
-        new (&cortex_memory[id]) ClusterNode(); // first-time construction
+        if (!cortex_memory[id].constructed.load(std::memory_order_acquire)) {
+            new (&cortex_memory[id]) ClusterNode(); // first-time construction
+            cortex_memory[id].constructed.store(true, std::memory_order_release);
+        }
         cortex_memory[id].init();
         free_next[id].store(-1, std::memory_order_relaxed);
+        cortex_memory[id].alive.store(true, std::memory_order_release);
         return id;
     }
 
@@ -445,6 +521,7 @@ struct ClusterGraph {
     // kill() — push node onto the Treiber stack. Lock-free.
     // ────────────────────────────────────────────────────────
     void kill(int id) noexcept {
+        if (id < 0 || id >= CORTEX_CAPACITY) return;
         cortex_memory[id].alive.store(false, std::memory_order_release);
         cortex_memory[id].edge_count.store(0, std::memory_order_release);
         cortex_memory[id].inverse_edge_count.store(0, std::memory_order_release);
@@ -527,13 +604,13 @@ struct ClusterGraph {
         }
         int activated = 1;
 
-        int ec = cortex_memory[source].edge_count.load(std::memory_order_acquire);
-        int limit = (ec < SPREAD_FANOUT_CAP) ? ec : SPREAD_FANOUT_CAP;
+        Edge snap[SPREAD_FANOUT_CAP];
+        int limit = cortex_memory[source].copy_edges_snapshot(snap, SPREAD_FANOUT_CAP);
 
         for (int i = 0; i < limit; i++) {
-            int tgt      = cortex_memory[source].edges[i].target;
-            float w      = cortex_memory[source].edges[i].weight;
-            EdgeType ety = cortex_memory[source].edges[i].type;
+            int tgt      = snap[i].target;
+            float w      = snap[i].weight;
+            EdgeType ety = snap[i].type;
             float prop   = strength * DECAY_PER_HOP * w;
 
             if (tgt < 0 || tgt >= nc) continue;
@@ -548,11 +625,11 @@ struct ClusterGraph {
                         cortex_memory[tgt].fired_this_query.store(true, std::memory_order_release);
                         activated += spread_activation(tgt, act, depth + 1);
                     } else if (cortex_memory[tgt].fired_this_query.load(std::memory_order_acquire)) {
-                        int sub_ec = cortex_memory[tgt].edge_count.load(std::memory_order_acquire);
-                        int sub_lim = (sub_ec < SPREAD_FANOUT_CAP) ? sub_ec : SPREAD_FANOUT_CAP;
+                        Edge sub_snap[SPREAD_FANOUT_CAP];
+                        int sub_lim = cortex_memory[tgt].copy_edges_snapshot(sub_snap, SPREAD_FANOUT_CAP);
                         for (int j = 0; j < sub_lim; j++) {
-                            int st = cortex_memory[tgt].edges[j].target;
-                            float sp = act * DECAY_PER_HOP * cortex_memory[tgt].edges[j].weight;
+                            int st = sub_snap[j].target;
+                            float sp = act * DECAY_PER_HOP * sub_snap[j].weight;
                             if (st < 0 || st >= nc) continue;
                             if (!cortex_memory[st].is_binding_node.load(std::memory_order_acquire)) {
                                 float cur = cortex_memory[st].activation.load(std::memory_order_acquire);
@@ -583,12 +660,12 @@ struct ClusterGraph {
             cortex_memory[source].activation.store(strength, std::memory_order_release);
 
         int activated = 1;
-        int iec = cortex_memory[source].inverse_edge_count.load(std::memory_order_acquire);
-        int limit = (iec < SPREAD_FANOUT_CAP) ? iec : SPREAD_FANOUT_CAP;
+        Edge snap[SPREAD_FANOUT_CAP];
+        int limit = cortex_memory[source].copy_inverse_edges_snapshot(snap, SPREAD_FANOUT_CAP);
 
         for (int i = 0; i < limit; i++) {
-            int tgt    = cortex_memory[source].inverse_edges[i].target;
-            float prop = strength * DECAY_PER_HOP * cortex_memory[source].inverse_edges[i].weight;
+            int tgt    = snap[i].target;
+            float prop = strength * DECAY_PER_HOP * snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
             float tcur = cortex_memory[tgt].activation.load(std::memory_order_acquire);
             if (prop > tcur)
@@ -609,12 +686,13 @@ struct ClusterGraph {
             cortex_memory[source].activation.store(strength, std::memory_order_release);
 
         int activated = 1, followed = 0;
-        int ec = cortex_memory[source].edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int ec = cortex_memory[source].copy_edges_snapshot(snap, MAX_FANOUT);
 
         for (int i = 0; i < ec && followed < SPREAD_FANOUT_CAP; i++) {
-            if (cortex_memory[source].edges[i].type != follow_type) continue;
-            int tgt    = cortex_memory[source].edges[i].target;
-            float prop = strength * DECAY_PER_HOP * cortex_memory[source].edges[i].weight;
+            if (snap[i].type != follow_type) continue;
+            int tgt    = snap[i].target;
+            float prop = strength * DECAY_PER_HOP * snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
             float tcur = cortex_memory[tgt].activation.load(std::memory_order_acquire);
             if (tcur >= 0.0f && prop > tcur)
@@ -636,12 +714,13 @@ struct ClusterGraph {
             cortex_memory[source].activation.store(strength, std::memory_order_release);
 
         int activated = 1, followed = 0;
-        int iec = cortex_memory[source].inverse_edge_count.load(std::memory_order_acquire);
+        Edge snap[MAX_FANOUT];
+        int iec = cortex_memory[source].copy_inverse_edges_snapshot(snap, MAX_FANOUT);
 
         for (int i = 0; i < iec && followed < SPREAD_FANOUT_CAP; i++) {
-            if (cortex_memory[source].inverse_edges[i].type != follow_type) continue;
-            int tgt    = cortex_memory[source].inverse_edges[i].target;
-            float prop = strength * DECAY_PER_HOP * cortex_memory[source].inverse_edges[i].weight;
+            if (snap[i].type != follow_type) continue;
+            int tgt    = snap[i].target;
+            float prop = strength * DECAY_PER_HOP * snap[i].weight;
             if (tgt < 0 || tgt >= nc) continue;
             float tcur = cortex_memory[tgt].activation.load(std::memory_order_acquire);
             if (tcur >= 0.0f && prop > tcur)
@@ -764,6 +843,7 @@ struct ClusterGraph {
         ClusterNode& pre = cortex_memory[pre_id];
         while (pre.edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
+        pre.edge_seq.fetch_add(1, std::memory_order_release);
         int ec = pre.edge_count.load(std::memory_order_relaxed);
         for (int i = 0; i < ec; i++) {
             if (pre.edges[i].target == post_id) {
@@ -773,6 +853,7 @@ struct ClusterGraph {
                 break;
             }
         }
+        pre.edge_seq.fetch_add(1, std::memory_order_release);
         pre.edge_lock.clear(std::memory_order_release);
     }
 
@@ -805,9 +886,9 @@ struct ClusterGraph {
         int current = start, steps = 0;
         const int nc = node_count.load(std::memory_order_acquire);
         for (int s = 0; s < max_steps; s++) {
-            int ec = cortex_memory[current].edge_count.load(std::memory_order_acquire);
-            if (ec == 0) break;
-            current = cortex_memory[current].edges[0].target;
+            Edge snap[1];
+            if (cortex_memory[current].copy_edges_snapshot(snap, 1) == 0) break;
+            current = snap[0].target;
             if (current < 0 || current >= nc) break;
             out_path[steps++] = current;
         }
@@ -820,12 +901,13 @@ struct ClusterGraph {
         const int nc = node_count.load(std::memory_order_acquire);
         for (int s = 0; s < max_steps; s++) {
             int best_tgt = -1; float best_w = 0.0f;
-            int ec = cortex_memory[current].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[current].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                if (cortex_memory[current].edges[e].type == follow_type &&
-                    cortex_memory[current].edges[e].weight > best_w) {
-                    best_w = cortex_memory[current].edges[e].weight;
-                    best_tgt = cortex_memory[current].edges[e].target;
+                if (snap[e].type == follow_type &&
+                    snap[e].weight > best_w) {
+                    best_w = snap[e].weight;
+                    best_tgt = snap[e].target;
                 }
             }
             if (best_tgt < 0 || best_tgt >= nc) break;
@@ -850,9 +932,10 @@ struct ClusterGraph {
 
         while (qfront < qback) {
             int cur = _bfs_queue[qfront++];
-            int ec = cortex_memory[cur].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[cur].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                int tgt = cortex_memory[cur].edges[e].target;
+                int tgt = snap[e].target;
                 if (tgt < 0 || tgt >= nc || _bfs_visited[tgt]) continue;
                 _bfs_visited[tgt] = true;
                 _bfs_parent[tgt]  = cur;
@@ -890,10 +973,11 @@ struct ClusterGraph {
 
         while (qfront < qback) {
             int cur = _bfs_queue[qfront++];
-            int ec = cortex_memory[cur].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[cur].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                if (cortex_memory[cur].edges[e].type != follow_type) continue;
-                int tgt = cortex_memory[cur].edges[e].target;
+                if (snap[e].type != follow_type) continue;
+                int tgt = snap[e].target;
                 if (tgt < 0 || tgt >= nc || _bfs_visited[tgt]) continue;
                 _bfs_visited[tgt] = true;
                 _bfs_parent[tgt]  = cur;
@@ -967,18 +1051,19 @@ struct ClusterGraph {
 
         // Build fingerprints: 32-bit = (alive_ec:8 | type_histogram:24 condensed)
         struct FP { uint32_t fp; int id; };
-        // Use a small fixed stack buffer; if nc is huge we sample
+        // Use a fixed stack buffer; if nc is huge we sample
         constexpr int MAX_SAMPLE = 1024;
-        static FP fps[MAX_SAMPLE];
+        std::array<FP, MAX_SAMPLE> fps;
         int ns = 0;
 
         for (int i = 0; i < nc && ns < MAX_SAMPLE; i++) {
-            if (!cortex_memory[i].alive.load(std::memory_order_relaxed)) continue;
-            int ec = cortex_memory[i].edge_count.load(std::memory_order_relaxed);
+            if (!cortex_memory[i].alive.load(std::memory_order_acquire)) continue;
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[i].copy_edges_snapshot(snap, MAX_FANOUT);
             if (ec == 0) continue;
             uint32_t hist = 0;
             for (int e = 0; e < ec; e++) {
-                EdgeType t = cortex_memory[i].edges[e].type;
+                EdgeType t = snap[e].type;
                 hist ^= (1u << (t % 32));
             }
             fps[ns++] = { (uint32_t)(ec & 0xFF) | (hist << 8), i };
@@ -1002,10 +1087,11 @@ struct ClusterGraph {
         const int nc = node_count.load(std::memory_order_acquire);
         for (int i = 0; i < nc; i++) {
             if (!cortex_memory[i].alive.load(std::memory_order_acquire)) continue;
-            int ec = cortex_memory[i].edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = cortex_memory[i].copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                uint32_t t   = (uint32_t)cortex_memory[i].edges[e].target;
-                uint32_t raw; memcpy(&raw, &cortex_memory[i].edges[e].weight, 4);
+                uint32_t t   = (uint32_t)snap[e].target;
+                uint32_t raw = std::bit_cast<uint32_t>(snap[e].weight);
                 h ^= (uint64_t)(i * 1000003 + t) ^ ((uint64_t)raw << 32);
                 h *= 1099511628211ull;
             }
