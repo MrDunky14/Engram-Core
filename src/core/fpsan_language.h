@@ -9,6 +9,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstring>
+#include <unordered_map>
 
 // Language Parameters
 const int LANG_CHAR_DIM = 64;   // 8x8 spike grid
@@ -74,8 +75,10 @@ struct LanguageCortex {
     };
 
     Cluster clusters[LANG_CLUSTERS];
+    std::unordered_map<std::string, int> word_cache;
 
     void init() {
+        word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             memset(clusters[c].weights, 0, LANG_WORD_DIM);
             memset(clusters[c].accum, 0, sizeof(clusters[c].accum));
@@ -83,6 +86,15 @@ struct LanguageCortex {
             clusters[c].frozen = false;
             clusters[c].active = false;
             clusters[c].word_label[0] = '\0';
+        }
+    }
+
+    void rebuild_cache() {
+        word_cache.clear();
+        for (int c = 0; c < LANG_CLUSTERS; c++) {
+            if (clusters[c].active && clusters[c].word_label[0] != '\0') {
+                word_cache[clusters[c].word_label] = c;
+            }
         }
     }
 
@@ -101,6 +113,14 @@ struct LanguageCortex {
 
     // Perceive a 256-dim word hash
     int perceive(const int8_t* input, bool learn, const char* word = nullptr) {
+        // Fast path: exact label lookup
+        if (word != nullptr && word[0] != '\0') {
+            auto it = word_cache.find(word);
+            if (it != word_cache.end()) {
+                return it->second;
+            }
+        }
+
         int best = -1, first_empty = -1;
         float best_sim = -9999.0f;
 
@@ -141,10 +161,13 @@ struct LanguageCortex {
             if (word != nullptr && clusters[best].word_label[0] == '\0') {
                 strncpy(clusters[best].word_label, word, 63);
                 clusters[best].word_label[63] = '\0';
+                word_cache[word] = best;
             }
             // Language freezes very fast (5 exposures)
             if (clusters[best].sample_count >= 5)
                 clusters[best].frozen = true;
+        } else if (best != -1 && word != nullptr && word[0] != '\0') {
+            word_cache[word] = best;
         }
         return best;
     }

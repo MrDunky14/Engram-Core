@@ -1,19 +1,36 @@
-CC = g++
-CFLAGS = -std=c++17 -O3 -pthread
+# ==============================================================================
+# Engram-Core Makefile
+# Build targets for research gates, systems benchmarks, and tests.
+# ==============================================================================
 
-all: atomic agency hierarchy gauntlet
+CXX = cl
+CXXFLAGS = /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src/core /I src/benchmark /I vendor/sqlite3/sqlite-amalgamation-3470200
+LIBS = Psapi.lib Winmm.lib user32.lib
+STACK = /link /STACK:16777216
 
-atomic: src/fpsan_v6_atomic.cpp
-	$(CC) $(CFLAGS) src/fpsan_v6_atomic.cpp -o build/v6_atomic
+all: systems_benchmark b1_gauntlet heartbeat r0_baseline
 
-agency: src/fpsan_v6_agency.cpp
-	$(CC) $(CFLAGS) src/fpsan_v6_agency.cpp -o build/v6_agency
+systems_benchmark: build/systems_benchmark.exe
 
-hierarchy: src/fpsan_v6_hierarchy.cpp
-	$(CC) $(CFLAGS) src/fpsan_v6_hierarchy.cpp -o build/v6_hierarchy
+build/sqlite3.obj: vendor/sqlite3/sqlite-amalgamation-3470200/sqlite3.c
+	@if not exist build mkdir build
+	cl /nologo /O2 /c vendor/sqlite3/sqlite-amalgamation-3470200/sqlite3.c /Fobuild/sqlite3.obj
 
-gauntlet: src/fpsan_tony_stark.cpp
-	$(CC) $(CFLAGS) src/fpsan_tony_stark.cpp -o build/v6_gauntlet
+build/systems_benchmark.exe: src/benchmark/systems_benchmark.cpp build/sqlite3.obj
+	@if not exist build mkdir build
+	$(CXX) $(CXXFLAGS) src/benchmark/systems_benchmark.cpp build/sqlite3.obj /Fobuild/systems_benchmark.obj /Febuild/systems_benchmark.exe $(STACK) $(LIBS)
+
+b1_gauntlet: src/benchmark/b1_retention_gauntlet.cpp
+	@if not exist build mkdir build
+	$(CXX) $(CXXFLAGS) src/benchmark/b1_retention_gauntlet.cpp /Fobuild/b1_retention_gauntlet.obj /Febuild/b1_retention_gauntlet.exe $(STACK)
+
+heartbeat: src/benchmark/heartbeat_gate.cpp
+	@if not exist build mkdir build
+	$(CXX) $(CXXFLAGS) src/benchmark/heartbeat_gate.cpp /Fobuild/heartbeat_gate.obj /Febuild/heartbeat_gate.exe $(STACK) $(LIBS)
+
+r0_baseline: src/benchmark/r0_baseline_gate.cpp
+	@if not exist build mkdir build
+	$(CXX) $(CXXFLAGS) src/benchmark/r0_baseline_gate.cpp src/core/fpsan_wasm_sandbox.cpp build/m3_*.obj /Fobuild/r0_baseline_gate.obj /Febuild/r0_baseline_gate.exe $(STACK) user32.lib
 
 clean:
-	rm -f build/*
+	@if exist build del /Q /F build\*

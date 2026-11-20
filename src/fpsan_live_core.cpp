@@ -38,6 +38,7 @@
 #include "fpsan_research.h"
 #include "fpsan_research_async.h"
 #include "fpsan_workspace.h"
+#include "fpsan_cortex_harness.h"
 #include "fpsan_knowledge_mass.h"
 #include "fpsan_san_scheduler.h"
 #include "fpsan_temporal_memory.h"
@@ -2136,6 +2137,7 @@ int main(int argc, char** argv) {
     }
 
     // ── BOOT SEQUENCE ──
+    timeBeginPeriod(1);
     g_state = STATE_BOOTING;
     auto t_sub0 = std::chrono::high_resolution_clock::now();
     g_workspace.init(); // Main desktop mode: keep windows visible to the user
@@ -2291,6 +2293,7 @@ int main(int argc, char** argv) {
         g_lexer.destroy();
         delete g_graph;
         delete g_cortex;
+        timeEndPeriod(1);
         return 0;
     }
 
@@ -2532,7 +2535,7 @@ int main(int argc, char** argv) {
             }
         }
         if (elapsed_us < TICK_INTERVAL_US) {
-            Sleep(1); // ~1ms granularity on Windows
+            precise_sleep_us(TICK_INTERVAL_US - elapsed_us);
         }
 
         // ── 5. HOMEOSTATIC DRIVES (The Living Loop) ──
@@ -2859,6 +2862,7 @@ int main(int argc, char** argv) {
     g_lexer.destroy();
     delete g_graph;
     delete g_cortex;
+    timeEndPeriod(1);
 
     return 0;
 }

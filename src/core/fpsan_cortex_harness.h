@@ -43,6 +43,8 @@ inline void precise_sleep_us(long long us) {
 #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002UL
 #endif
 
+    auto target_time = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(us);
+
     // Cache the waitable timer handle per-thread to avoid repeated CreateHandle.
     static thread_local HANDLE s_timer = nullptr;
     if (s_timer == nullptr) {
@@ -53,14 +55,20 @@ inline void precise_sleep_us(long long us) {
             s_timer = CreateWaitableTimerW(nullptr, TRUE, nullptr);
     }
 
-    if (s_timer != nullptr) {
+    // Coarse sleep if interval is sufficiently large (> 250 us)
+    long long coarse_us = us - 200;
+    if (s_timer != nullptr && coarse_us > 0) {
         LARGE_INTEGER ft;
-        ft.QuadPart = -10LL * us;  // 100-ns units, negative = relative
+        ft.QuadPart = -10LL * coarse_us;  // 100-ns units, negative = relative
         SetWaitableTimerEx(s_timer, &ft, 0, nullptr, nullptr, nullptr, 0);
         WaitForSingleObject(s_timer, INFINITE);
-    } else {
-        // Last resort: system sleep_for (limited by timer granularity)
-        std::this_thread::sleep_for(std::chrono::microseconds(us));
+    } else if (coarse_us > 1000) {
+        std::this_thread::sleep_for(std::chrono::microseconds(coarse_us));
+    }
+
+    // Microsecond spin-wait tail to absorb thread quantum jitter and hit exact deadline
+    while (std::chrono::high_resolution_clock::now() < target_time) {
+        YieldProcessor();
     }
 }
 

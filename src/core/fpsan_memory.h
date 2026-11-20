@@ -234,6 +234,7 @@ struct SynapticMemory {
             strncpy(cortex->clusters[rec.cluster_id].word_label, rec.word_label, 63);
             cortex->clusters[rec.cluster_id].word_label[63] = '\0';
         }
+        cortex->rebuild_cache();
 
         // Block 3: Topology (flat iteration)
         int total_edges_read = 0;
