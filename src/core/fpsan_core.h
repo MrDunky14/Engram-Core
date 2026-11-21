@@ -194,9 +194,11 @@ struct CognitiveCore {
 
         // 3. PREDICT — what comes next based on temporal bonds
         predicted_next = -1;
-        if (current_cluster >= 0 &&
-            graph.node(current_cluster).edge_count.load(std::memory_order_acquire) > 0) {
-            predicted_next = graph.node(current_cluster).edges[0].target;
+        if (current_cluster >= 0) {
+            Edge snap[1];
+            if (graph.node(current_cluster).copy_edges_snapshot(snap, 1) > 0) {
+                predicted_next = snap[0].target;
+            }
         }
 
         // 4. REASON — spread activation to find associations

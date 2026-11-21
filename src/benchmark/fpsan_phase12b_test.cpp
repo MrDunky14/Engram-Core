@@ -144,8 +144,8 @@ int main() {
          << "  " << (cortex_match ? "[PASS]" : "[FAIL]") << endl;
 
     // Verify reverse string lookup survived
-    const char* eagle_word = cortex2->get_word(eagle_cid_1);
-    bool word_survived = (strcmp(eagle_word, "eagle") == 0);
+    std::string eagle_word = cortex2->get_word(eagle_cid_1);
+    bool word_survived = (eagle_word == "eagle");
     cout << "  Word lookup 'eagle': \"" << eagle_word << "\"  " << (word_survived ? "[PASS]" : "[FAIL]") << endl;
 
     // ==============================

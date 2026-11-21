@@ -71,10 +71,10 @@ Figures below match the **README badge narrative** for a typical cold-start buil
 
 | Metric | Result | Description |
 |--------|--------|-------------|
-| **Cognitive tick target** | **~1 kHz** | Configurable interval (`TICK_INTERVAL_US`). |
-| **Spreading latency** | **~92 μs** | P99-class story on the reference laptop CPU (no GPU). |
+| **Cognitive tick target** | **~1 kHz** | Hybrid WaitableTimer + microsecond spinwait (`TICK_INTERVAL_US`). |
+| **Spreading latency** | **~92 μs** | P99-class story on reference edge CPU (no GPU). |
 | **Perceptual update** | **10 Hz** | Visual sampling cadence (BitBlt path). |
-| **RAM utilization** | **~3.1 MB** | Baseline engine + buffers (not a long-run maximum). |
+| **RAM utilization** | **< 50 MB** | Active physical working set (RSS) via demand-paged VirtualAlloc arena + flat lexicon. |
 | **Binary footprint** | **~248 KB** | `engram.exe` baseline (rebuild with `run_engram.bat`). |
 
 ---

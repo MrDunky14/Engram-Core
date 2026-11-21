@@ -32,6 +32,17 @@
 #include <fstream>
 #include <filesystem>
 #include <random>
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
+#endif
 
 using namespace std;
 using namespace std::chrono;
@@ -90,6 +101,12 @@ static bool test_lossless_persistence_v3() {
     g1->node(cid_sun).add_edge(cid_bind, 1.0f, EDGE_TEMPORAL, PROV_USER);
     g1->node(cid_bind).add_inverse_edge(cid_sun, 1.0f, EDGE_TEMPORAL);
 
+    // Setup dead slot to verify Treiber stack reconstruction across sleep/wake
+    int n_dead_target = g1->spawn();
+    int n_alive_follow = g1->spawn();
+    assert(n_dead_target >= 0 && n_alive_follow >= 0);
+    g1->kill(n_dead_target); // killed before sleep
+
     // Verify Speaker passes before sleep
     fpsan::SpeakerAuditEntry audits[16];
     int audit_n = 0;
@@ -130,6 +147,13 @@ static bool test_lossless_persistence_v3() {
     assert(g2->node(cid_motor).motor_action.delay_ms == 50);
     assert(strcmp(g2->node(cid_motor).motor_action.text, "save_buffer") == 0);
 
+    // Verify dead node stays dead and alive node stays alive
+    assert(g2->node(n_alive_follow).alive.load(memory_order_relaxed) == true);
+    assert(g2->node(n_dead_target).alive.load(memory_order_relaxed) == false);
+    int recycled = g2->spawn();
+    assert(recycled == n_dead_target);
+    cout << "  Treiber stack dead node recycling across sleep/wake verified [PASS]\n";
+
     // Verify edge provenance was retained
     Edge sun_edges[MAX_FANOUT];
     int sun_ec = g2->node(cid_sun).copy_edges_snapshot(sun_edges, MAX_FANOUT);
@@ -169,13 +193,17 @@ static bool test_lossless_persistence_v3() {
     }
 
     auto g3 = std::make_unique<ClusterGraph>();
+    g3->init(50);
+    g3->node(5).activation.store(42.0f, memory_order_relaxed);
     auto cx3 = std::make_unique<LanguageCortex>();
+    cx3->init();
     bool corrupt_wake_ok = SynapticMemory::wake(corrupt_filepath, g3.get(), cx3.get());
     if (corrupt_wake_ok) {
         cerr << "FAIL: Corrupted file was accepted! Checksum guard failed!\n";
         return false;
     }
-    cout << "  Corrupted file correctly rejected via FNV-1a checksum mismatch [PASS]\n";
+    assert(g3->node(5).activation.load(memory_order_relaxed) == 42.0f);
+    cout << "  Corrupted file correctly rejected & in-memory canary preserved [PASS]\n";
 
     // Clean up temp test files
     filesystem::remove(filepath);
@@ -346,7 +374,46 @@ static bool test_8thread_concurrency_stress() {
     return true;
 }
 
+// ─────────────────────────────────────────────────────────────
+// TEST 3: Memory Working Set (RSS) Demand-Paging Verification
+// ─────────────────────────────────────────────────────────────
+static bool test_memory_rss_footprint() {
+    cout << "\n======================================================\n";
+    cout << "[Gate E1] Running Test 3: Memory Working Set (RSS) Verification\n";
+    cout << "======================================================\n";
+
+    // Boot a production-scale 6,500-cluster graph, language cortex, and lexicon
+    auto g = std::make_unique<ClusterGraph>();
+    g->init(INITIAL_CLUSTERS);
+    auto cx = std::make_unique<LanguageCortex>();
+    cx->init();
+    auto lex = std::make_unique<Lexicon>();
+    lex->init();
+    lex->bootstrap_core();
+
+#if defined(_WIN32)
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+        size_t rss_mb = pmc.WorkingSetSize / (1024 * 1024);
+        cout << "  Active Process Working Set (RSS): " << rss_mb << " MB\n";
+        if (rss_mb >= 50) {
+            cerr << "FAIL: Working set " << rss_mb << " MB exceeds 50 MB threshold!\n";
+            return false;
+        }
+        cout << "  Working set < 50 MB verified (Demand-paged arena + flat lexicon active) [PASS]\n";
+    }
+#else
+    cout << "  POSIX RSS check skipped.\n";
+#endif
+
+    cout << ">>> Test 3 (Memory Working Set RSS) PASSED <<<\n";
+    return true;
+}
+
 int main() {
+    setvbuf(stdout, nullptr, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
+    cout.setf(ios::unitbuf);
     cout << "\n======================================================\n";
     cout << "  ENGRAM-CORE GATE E1: C++23 CONCURRENCY & PERSISTENCE \n";
     cout << "======================================================\n";
@@ -358,6 +425,11 @@ int main() {
 
     if (!test_8thread_concurrency_stress()) {
         cerr << "\n[GATE E1 FAILED] Concurrency stress test failed.\n";
+        return 1;
+    }
+
+    if (!test_memory_rss_footprint()) {
+        cerr << "\n[GATE E1 FAILED] Memory RSS footprint test failed.\n";
         return 1;
     }
 

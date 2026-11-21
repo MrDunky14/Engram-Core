@@ -51,9 +51,10 @@ struct SemanticPlanner {
         int head = -1;
         float best_act = 0.0f;
         {
-            int ec = graph->node(goal_id).edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = graph->node(goal_id).copy_edges_snapshot(snap, MAX_FANOUT);
             for (int i = 0; i < ec && chain_len < max_chain; i++) {
-                const Edge& e = graph->node(goal_id).edges[i];
+                const Edge& e = snap[i];
                 if (e.type != EDGE_IMPLEMENTED_BY) continue;
                 int t = e.target;
                 if (t < 0 || t >= nc) continue;
@@ -81,9 +82,10 @@ struct SemanticPlanner {
             // Find next in EDGE_SEQUENCE — pick highest weight
             int next = -1;
             float best_w = 0.0f;
-            int ec = graph->node(current).edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = graph->node(current).copy_edges_snapshot(snap, MAX_FANOUT);
             for (int i = 0; i < ec; i++) {
-                const Edge& e = graph->node(current).edges[i];
+                const Edge& e = snap[i];
                 if (e.type != EDGE_SEQUENCE) continue;
                 if (e.target < 0 || e.target >= nc) continue;
                 if (e.weight > best_w) { best_w = e.weight; next = e.target; }
@@ -101,9 +103,9 @@ struct SemanticPlanner {
         printf("[SemanticPlanner] Goal node %d → %d motor primitives:\n", goal_id, len);
         for (int i = 0; i < len; i++) {
             const ClusterNode& n = graph->node(chain[i]);
-            const char* label = (chain[i] < 6500) ? cortex->get_word(chain[i]) : "";
+            std::string label = (chain[i] < 6500) ? cortex->get_word(chain[i]) : "";
             printf("  [%d] node=%d label='%s' type=%d\n",
-                   i, chain[i], label,
+                   i, chain[i], label.c_str(),
                    (int)n.motor_action.type);
         }
     }
@@ -136,11 +138,12 @@ struct ShadowBrain {
             dst.is_binding_node.store(src.is_binding_node.load(), std::memory_order_relaxed);
             dst.activation.store(0.0f, std::memory_order_relaxed);
             // Copy edges (weight × 0.1 to model low-impact sandbox spread)
-            int ec = src.edge_count.load(std::memory_order_relaxed);
+            Edge snap[MAX_FANOUT];
+            int ec = src.copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                int tgt = src.edges[e].target;
+                int tgt = snap[e].target;
                 if (tgt < 0 || tgt >= shadow_nc) continue; // skip out-of-range
-                dst.add_edge(tgt, src.edges[e].weight * 0.1f, src.edges[e].type);
+                dst.add_edge(tgt, snap[e].weight * 0.1f, snap[e].type);
             }
         }
     }
@@ -170,10 +173,11 @@ struct ShadowBrain {
         for (int i = 0; i < chain_len; i++) {
             int mid = motor_chain[i];
             if (mid < 0 || mid >= snc) continue;
-            int ec = source->node(mid).edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            int ec = source->node(mid).copy_edges_snapshot(snap, MAX_FANOUT);
             for (int e = 0; e < ec; e++) {
-                if (source->node(mid).edges[e].type != EDGE_REQUIRES) continue;
-                int req_id = source->node(mid).edges[e].target;
+                if (snap[e].type != EDGE_REQUIRES) continue;
+                int req_id = snap[e].target;
                 if (req_id < 0) continue;
                 // Preconditions checked against REAL WORLD activation (main_ref).
                 // The shadow models hypothetical consequences; preconditions are

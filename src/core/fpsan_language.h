@@ -79,8 +79,7 @@ struct LanguageCortex {
     std::unordered_map<std::string, int> word_cache;
     mutable std::shared_mutex cortex_lock;
 
-    void init() {
-        std::unique_lock<std::shared_mutex> lock(cortex_lock);
+    void init_nolock() {
         word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             memset(clusters[c].weights, 0, LANG_WORD_DIM);
@@ -92,14 +91,23 @@ struct LanguageCortex {
         }
     }
 
-    void rebuild_cache() {
+    void init() {
         std::unique_lock<std::shared_mutex> lock(cortex_lock);
+        init_nolock();
+    }
+
+    void rebuild_cache_nolock() {
         word_cache.clear();
         for (int c = 0; c < LANG_CLUSTERS; c++) {
             if (clusters[c].active && clusters[c].word_label[0] != '\0') {
                 word_cache[clusters[c].word_label] = c;
             }
         }
+    }
+
+    void rebuild_cache() {
+        std::unique_lock<std::shared_mutex> lock(cortex_lock);
+        rebuild_cache_nolock();
     }
 
     int active_count() const {
@@ -109,10 +117,10 @@ struct LanguageCortex {
         return n;
     }
 
-    const char* get_word(int cluster_id) const {
+    std::string get_word(int cluster_id) const {
         std::shared_lock<std::shared_mutex> lock(cortex_lock);
         if (cluster_id >= 0 && cluster_id < LANG_CLUSTERS && clusters[cluster_id].active) {
-            return clusters[cluster_id].word_label;
+            return std::string(clusters[cluster_id].word_label);
         }
         return "";
     }

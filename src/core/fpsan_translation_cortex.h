@@ -22,11 +22,10 @@ public:
     /// Register or refresh mapping for an active lexical cluster.
     void bind_label(int cluster_id, const char* word, const LanguageCortex* cortex) noexcept {
         if (cluster_id < 0 || !word || !word[0]) return;
-        const char* lab = cortex ? cortex->get_word(cluster_id) : word;
-        if (!lab || !lab[0]) lab = word;
-        std::string k(lab);
-        word_to_id_[k] = cluster_id;
-        id_to_word_[cluster_id] = std::move(k);
+        std::string lab = cortex ? cortex->get_word(cluster_id) : "";
+        if (lab.empty()) lab = word;
+        word_to_id_[lab] = cluster_id;
+        id_to_word_[cluster_id] = std::move(lab);
     }
 
     [[nodiscard]] int id_for_token(const char* tok) const noexcept {

@@ -27,6 +27,7 @@
 #include <chrono>
 #include <shared_mutex>
 #include <cstdint>
+#include <vector>
 
 // ── Binary format constants ───────────────────────────────────
 static constexpr uint32_t FPSAN_MAGIC   = 0x46505341; // "FPSA"
@@ -91,6 +92,7 @@ struct SynapticMemory {
                       LanguageCortex* cortex)
     {
         std::unique_lock<std::shared_mutex> brain_lock(graph->graph_rw_lock);
+        std::unique_lock<std::shared_mutex> cortex_lock(cortex->cortex_lock);
 
         FILE* f = fopen(filepath, "wb");
         if (!f) {
@@ -121,7 +123,8 @@ struct SynapticMemory {
             fclose(f); return false;
         }
 
-        uint64_t running_hash = FNV1A64_OFFSET_BASIS;
+        // Hash header into running_hash as root of trust
+        uint64_t running_hash = fnv1a64_update(FNV1A64_OFFSET_BASIS, &header, sizeof(FpsanHeader));
 
         // Block 2: Language Cortex
         for (int i = 0; i < LANG_CLUSTERS; i++) {
@@ -233,6 +236,7 @@ struct SynapticMemory {
                      LanguageCortex* cortex)
     {
         std::unique_lock<std::shared_mutex> brain_lock(graph->graph_rw_lock);
+        std::unique_lock<std::shared_mutex> cortex_lock(cortex->cortex_lock);
 
         FILE* f = fopen(filepath, "rb");
         if (!f) {
@@ -240,130 +244,245 @@ struct SynapticMemory {
             return false;
         }
 
-        auto t_start = std::chrono::high_resolution_clock::now();
-
-        // Block 1: Header
-        FpsanHeader header;
-        if (fread(&header, sizeof(FpsanHeader), 1, f) != 1) {
-            fprintf(stderr, "[SynapticMemory] ERROR: Failed to read header.\n");
+        if (fseek(f, 0, SEEK_END) != 0) {
             fclose(f); return false;
         }
+        long file_size = ftell(f);
+        if (file_size < (long)(sizeof(FpsanHeader) + sizeof(uint64_t))) {
+            fprintf(stderr, "[SynapticMemory] ERROR: File '%s' too small (%ld bytes).\n", filepath, file_size);
+            fclose(f); return false;
+        }
+        if (fseek(f, 0, SEEK_SET) != 0) {
+            fclose(f); return false;
+        }
+
+        std::vector<uint8_t> buf(static_cast<size_t>(file_size));
+        if (fread(buf.data(), 1, static_cast<size_t>(file_size), f) != static_cast<size_t>(file_size)) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Incomplete read of '%s'.\n", filepath);
+            fclose(f); return false;
+        }
+        fclose(f);
+
+        auto t_start = std::chrono::high_resolution_clock::now();
+
+        // Check trailing checksum first
+        size_t payload_len = static_cast<size_t>(file_size) - sizeof(uint64_t);
+        uint64_t expected_hash = 0;
+        memcpy(&expected_hash, buf.data() + payload_len, sizeof(uint64_t));
+
+        uint64_t computed_hash = fnv1a64_update(FNV1A64_OFFSET_BASIS, buf.data(), payload_len);
+        if (computed_hash != expected_hash) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Checksum mismatch in '%s': expected 0x%016llX, got 0x%016llX\n",
+                    filepath, (unsigned long long)expected_hash, (unsigned long long)computed_hash);
+            return false;
+        }
+
+        // Header validation
+        FpsanHeader header;
+        memcpy(&header, buf.data(), sizeof(FpsanHeader));
         if (header.magic != FPSAN_MAGIC) {
             fprintf(stderr, "[SynapticMemory] ERROR: Bad magic 0x%08X\n", header.magic);
-            fclose(f); return false;
+            return false;
         }
         if (header.version != FPSAN_VERSION) {
             fprintf(stderr, "[SynapticMemory] ERROR: Unsupported version (file=%u engine=%u)\n",
-                header.version, FPSAN_VERSION);
-            fclose(f); return false;
+                    header.version, FPSAN_VERSION);
+            return false;
+        }
+        if (header.node_count == 0 || header.node_count > (uint32_t)CORTEX_CAPACITY) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Illegal node_count %u (max %d)\n",
+                    header.node_count, CORTEX_CAPACITY);
+            return false;
+        }
+        if (header.cortex_active_count > (uint32_t)LANG_CLUSTERS) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Illegal cortex_active_count %u (max %d)\n",
+                    header.cortex_active_count, LANG_CLUSTERS);
+            return false;
+        }
+        if (header.alive_node_count > header.node_count) {
+            fprintf(stderr, "[SynapticMemory] ERROR: alive_node_count %u > node_count %u\n",
+                    header.alive_node_count, header.node_count);
+            return false;
         }
 
-        // Initialize fresh brain
-        graph->init((int)header.node_count);
-        cortex->init();
+        // Structural and bounds pre-verification pass
+        const uint8_t* ptr = buf.data() + sizeof(FpsanHeader);
+        const uint8_t* const payload_end = buf.data() + payload_len;
 
-        uint64_t running_hash = FNV1A64_OFFSET_BASIS;
+        for (uint32_t i = 0; i < header.cortex_active_count; i++) {
+            if (ptr + sizeof(CortexRecord) > payload_end) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Truncated cortex record at index %u\n", i);
+                return false;
+            }
+            CortexRecord rec;
+            memcpy(&rec, ptr, sizeof(CortexRecord));
+            if (rec.cluster_id < 0 || rec.cluster_id >= LANG_CLUSTERS) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Bad cortex cluster_id %d\n", rec.cluster_id);
+                return false;
+            }
+            ptr += sizeof(CortexRecord);
+        }
 
-        // Block 2: Language Cortex
+        for (uint32_t i = 0; i < header.alive_node_count; i++) {
+            if (ptr + sizeof(NodeRecord) > payload_end) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Truncated node record at alive index %u\n", i);
+                return false;
+            }
+            NodeRecord nrec;
+            memcpy(&nrec, ptr, sizeof(NodeRecord));
+            if (nrec.node_id < 0 || nrec.node_id >= (int32_t)header.node_count) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Bad node_id %d (node_count=%u)\n",
+                        nrec.node_id, header.node_count);
+                return false;
+            }
+            if (nrec.edge_count < 0 || nrec.edge_count > MAX_FANOUT) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Bad edge_count %d at node %d (max %d)\n",
+                        nrec.edge_count, nrec.node_id, MAX_FANOUT);
+                return false;
+            }
+            if (nrec.inverse_edge_count < 0 || nrec.inverse_edge_count > MAX_FANOUT) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Bad inverse_edge_count %d at node %d (max %d)\n",
+                        nrec.inverse_edge_count, nrec.node_id, MAX_FANOUT);
+                return false;
+            }
+            ptr += sizeof(NodeRecord);
+
+            if (nrec.flags & NODE_FLAG_MOTOR) {
+                if (ptr + sizeof(MotorAction) > payload_end) {
+                    fprintf(stderr, "[SynapticMemory] ERROR: Truncated motor action at node %d\n", nrec.node_id);
+                    return false;
+                }
+                ptr += sizeof(MotorAction);
+            }
+
+            size_t fwd_bytes = static_cast<size_t>(nrec.edge_count) * sizeof(EdgeRecord);
+            if (ptr + fwd_bytes > payload_end) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Truncated forward edges at node %d\n", nrec.node_id);
+                return false;
+            }
+            ptr += fwd_bytes;
+
+            size_t inv_bytes = static_cast<size_t>(nrec.inverse_edge_count) * sizeof(EdgeRecord);
+            if (ptr + inv_bytes > payload_end) {
+                fprintf(stderr, "[SynapticMemory] ERROR: Truncated inverse edges at node %d\n", nrec.node_id);
+                return false;
+            }
+            ptr += inv_bytes;
+        }
+
+        if (ptr != payload_end) {
+            fprintf(stderr, "[SynapticMemory] ERROR: Payload size mismatch: parsed %zu bytes, expected %zu\n",
+                    (size_t)(ptr - buf.data()), payload_len);
+            return false;
+        }
+
+        // ========================================================
+        // Verification succeeded! Now safely instantiate and populate.
+        // ========================================================
+        graph->init(0);
+        cortex->init_nolock();
+
+        graph->arena_alloc.store((int)header.node_count, std::memory_order_relaxed);
+        graph->node_count.store((int)header.node_count, std::memory_order_relaxed);
+
+        ptr = buf.data() + sizeof(FpsanHeader);
+
+        // Block 2: Populate Language Cortex
         for (uint32_t i = 0; i < header.cortex_active_count; i++) {
             CortexRecord rec;
-            if (fread(&rec, sizeof(CortexRecord), 1, f) != 1) {
-                fprintf(stderr, "[SynapticMemory] ERROR: Truncated cortex at %u\n", i);
-                fclose(f); return false;
-            }
-            running_hash = fnv1a64_update(running_hash, &rec, sizeof(CortexRecord));
-            if (rec.cluster_id < 0 || rec.cluster_id >= LANG_CLUSTERS) continue;
-            memcpy(cortex->clusters[rec.cluster_id].weights, rec.weights, LANG_WORD_DIM);
-            memcpy(cortex->clusters[rec.cluster_id].accum,   rec.accum,
-                   sizeof(float) * LANG_WORD_DIM);
-            cortex->clusters[rec.cluster_id].sample_count = rec.sample_count;
-            cortex->clusters[rec.cluster_id].frozen       = (rec.frozen != 0);
-            cortex->clusters[rec.cluster_id].active       = true;
-            strncpy(cortex->clusters[rec.cluster_id].word_label, rec.word_label, 63);
-            cortex->clusters[rec.cluster_id].word_label[63] = '\0';
-        }
-        cortex->rebuild_cache();
+            memcpy(&rec, ptr, sizeof(CortexRecord));
+            ptr += sizeof(CortexRecord);
 
-        // Block 3: Topology (lossless restore)
+            int cid = rec.cluster_id;
+            memcpy(cortex->clusters[cid].weights, rec.weights, LANG_WORD_DIM);
+            memcpy(cortex->clusters[cid].accum,   rec.accum, sizeof(float) * LANG_WORD_DIM);
+            cortex->clusters[cid].sample_count = rec.sample_count;
+            cortex->clusters[cid].frozen       = (rec.frozen != 0);
+            cortex->clusters[cid].active       = true;
+            strncpy(cortex->clusters[cid].word_label, rec.word_label, 63);
+            cortex->clusters[cid].word_label[63] = '\0';
+        }
+        cortex->rebuild_cache_nolock();
+
+        // Block 3: Populate Nodes and Edges
+        std::vector<bool> node_is_alive(header.node_count, false);
         int total_edges_read = 0;
+
         for (uint32_t i = 0; i < header.alive_node_count; i++) {
             NodeRecord nrec;
-            if (fread(&nrec, sizeof(NodeRecord), 1, f) != 1) {
-                fprintf(stderr, "[SynapticMemory] ERROR: Truncated node at %u\n", i);
-                fclose(f); return false;
-            }
-            running_hash = fnv1a64_update(running_hash, &nrec, sizeof(NodeRecord));
-            if (nrec.node_id < 0 || nrec.node_id >= (int)header.node_count) {
-                fprintf(stderr, "[SynapticMemory] ERROR: Bad node_id %d\n", nrec.node_id);
-                fclose(f); return false;
-            }
+            memcpy(&nrec, ptr, sizeof(NodeRecord));
+            ptr += sizeof(NodeRecord);
 
-            ClusterNode& n = graph->cortex_memory[nrec.node_id];
-            n.alive.store(true,   std::memory_order_relaxed);
+            int nid = nrec.node_id;
+            node_is_alive[nid] = true;
+
+            ClusterNode& n = graph->cortex_memory[nid];
+            new (&n) ClusterNode();
+            n.init();
+            n.constructed.store(true, std::memory_order_relaxed);
+            n.alive.store(true, std::memory_order_relaxed);
             n.activation.store(0.0f, std::memory_order_relaxed);
             n.clamped.store((nrec.flags & NODE_FLAG_CLAMPED) != 0, std::memory_order_relaxed);
             n.is_binding_node.store((nrec.flags & NODE_FLAG_BINDING) != 0, std::memory_order_relaxed);
             n.is_motor_node.store((nrec.flags & NODE_FLAG_MOTOR) != 0, std::memory_order_relaxed);
             n.memory_tier.store(nrec.memory_tier, std::memory_order_relaxed);
 
-            // Optional MotorAction
             if (nrec.flags & NODE_FLAG_MOTOR) {
                 MotorAction act;
-                if (fread(&act, sizeof(MotorAction), 1, f) != 1) {
-                    fprintf(stderr, "[SynapticMemory] ERROR: Truncated motor action at node %d\n", nrec.node_id);
-                    fclose(f); return false;
-                }
-                running_hash = fnv1a64_update(running_hash, &act, sizeof(MotorAction));
+                memcpy(&act, ptr, sizeof(MotorAction));
+                ptr += sizeof(MotorAction);
                 n.motor_action = act;
             }
 
             n.edge_count.store(nrec.edge_count, std::memory_order_relaxed);
             for (int e = 0; e < nrec.edge_count; e++) {
                 EdgeRecord erec;
-                if (fread(&erec, sizeof(EdgeRecord), 1, f) != 1) {
-                    fprintf(stderr, "[SynapticMemory] ERROR: Truncated forward edge.\n");
-                    fclose(f); return false;
-                }
-                running_hash = fnv1a64_update(running_hash, &erec, sizeof(EdgeRecord));
+                memcpy(&erec, ptr, sizeof(EdgeRecord));
+                ptr += sizeof(EdgeRecord);
+
                 n.edges[e].target         = erec.target;
                 n.edges[e].weight         = erec.weight;
                 n.edges[e].co_occur_count = erec.co_occur_count;
-                n.edges[e].type           = (EdgeType)erec.type;
-                n.edges[e].provenance     = (EdgeProvenance)erec.provenance;
+                n.edges[e].type           = static_cast<EdgeType>(erec.type);
+                n.edges[e].provenance     = static_cast<EdgeProvenance>(erec.provenance);
                 total_edges_read++;
             }
 
             n.inverse_edge_count.store(nrec.inverse_edge_count, std::memory_order_relaxed);
             for (int e = 0; e < nrec.inverse_edge_count; e++) {
                 EdgeRecord erec;
-                if (fread(&erec, sizeof(EdgeRecord), 1, f) != 1) {
-                    fprintf(stderr, "[SynapticMemory] ERROR: Truncated inverse edge.\n");
-                    fclose(f); return false;
-                }
-                running_hash = fnv1a64_update(running_hash, &erec, sizeof(EdgeRecord));
+                memcpy(&erec, ptr, sizeof(EdgeRecord));
+                ptr += sizeof(EdgeRecord);
+
                 n.inverse_edges[e].target         = erec.target;
                 n.inverse_edges[e].weight         = erec.weight;
                 n.inverse_edges[e].co_occur_count = erec.co_occur_count;
-                n.inverse_edges[e].type           = (EdgeType)erec.type;
-                n.inverse_edges[e].provenance     = (EdgeProvenance)erec.provenance;
+                n.inverse_edges[e].type           = static_cast<EdgeType>(erec.type);
+                n.inverse_edges[e].provenance     = static_cast<EdgeProvenance>(erec.provenance);
                 total_edges_read++;
             }
         }
 
-        // Block 4: Checksum verification
-        uint64_t expected_hash = 0;
-        if (fread(&expected_hash, sizeof(uint64_t), 1, f) != 1) {
-            fprintf(stderr, "[SynapticMemory] ERROR: Missing payload checksum (file truncated).\n");
-            fclose(f); return false;
-        }
+        // Reconstruct Treiber stack for all dead nodes in [0, header.node_count)
+        for (int id = static_cast<int>(header.node_count) - 1; id >= 0; id--) {
+            if (!node_is_alive[id]) {
+                ClusterNode& n = graph->cortex_memory[id];
+                new (&n) ClusterNode();
+                n.init();
+                n.constructed.store(true, std::memory_order_relaxed);
+                n.alive.store(false, std::memory_order_relaxed);
 
-        if (expected_hash != running_hash) {
-            fprintf(stderr, "[SynapticMemory] ERROR: Corrupted payload checksum mismatch: expected 0x%016llX, got 0x%016llX\n",
-                    (unsigned long long)expected_hash, (unsigned long long)running_hash);
-            fclose(f); return false;
-        }
+                uint64_t head = graph->free_head.load(std::memory_order_relaxed);
+                uint32_t tag = static_cast<uint32_t>(head >> 32);
+                int32_t  old_top = (head == FREE_STACK_EMPTY)
+                    ? -1
+                    : static_cast<int32_t>(head & 0xFFFFFFFFull);
 
-        fclose(f);
+                graph->free_next[id].store(old_top, std::memory_order_relaxed);
+                uint64_t new_head = (((uint64_t)(tag + 1) << 32) | static_cast<uint32_t>(id));
+                graph->free_head.store(new_head, std::memory_order_relaxed);
+            }
+        }
 
         auto t_end = std::chrono::high_resolution_clock::now();
         double ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();

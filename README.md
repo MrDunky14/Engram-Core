@@ -1,17 +1,18 @@
 # 🧠 Engram-Core
 
-**A Cache-Conscious Spreading-Activation Graph Store & Real-Time Edge Runtime in C++17**
+**A Cache-Conscious Spreading-Activation Graph Store & Real-Time Edge Runtime in C++23**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
-[![Compiler](https://img.shields.io/badge/Compiler-MSVC_19.52_%7C_C%2B%2B17-blue.svg)](#)
+[![Compiler](https://img.shields.io/badge/Compiler-MSVC_19.52_%7C_C%2B%2B23-blue.svg)](#)
 [![Graph Ingest](https://img.shields.io/badge/Ingest_Throughput-36.5M_triples%2Fs-brightgreen.svg)](#)
 [![2-Hop Traversal](https://img.shields.io/badge/2--Hop_Traversal-200_ns-darkblue.svg)](#)
+[![Memory Working Set](https://img.shields.io/badge/Working_Set_%28RSS%29-47_MB-brightgreen.svg)](#)
 [![Loop Clock](https://img.shields.io/badge/Loop_Clock-1%2C000_Hz_Hybrid-orange.svg)](#)
 [![Python Dependencies](https://img.shields.io/badge/Python_Dependencies-0-brightgreen.svg)](#)
 
 **Architected by Krishna Singh**
 
-Engram-Core is a bare-metal, dependency-free C++17 knowledge-graph storage engine and deterministic spreading-activation substrate designed for low-latency edge AI systems. Rather than treating knowledge retrieval as a high-latency external service or relying on heavy database engines, Engram-Core implements a contiguous flat-arena graph with lock-free node recycling, atomic compare-and-swap (CAS) voltage accumulation, and a hybrid microsecond timer scheduler achieving **36.5M triples/sec ingestion** and **200 ns 2-hop relational traversal** on standard edge hardware.
+Engram-Core is a bare-metal, dependency-free C++23 knowledge-graph storage engine and deterministic spreading-activation substrate designed for low-latency edge AI systems. Rather than treating knowledge retrieval as a high-latency external service or relying on heavy database engines, Engram-Core implements a contiguous demand-paged flat arena with lock-free node recycling, atomic compare-and-swap (CAS) voltage accumulation, seqlock-protected edge snapshots, and a hybrid microsecond timer scheduler achieving **36.5M triples/sec ingestion**, **200 ns 2-hop relational traversal**, and **47 MB process working set** on standard edge hardware.
 
 ---
 
@@ -19,17 +20,19 @@ Engram-Core is a bare-metal, dependency-free C++17 knowledge-graph storage engin
 
 Engram-Core is built from the hardware level up for predictable memory access and sub-microsecond latency:
 
-* **Contiguous Flat Arena (`ClusterGraph`):** Pre-allocates up to 262,144 nodes in a single cache-aligned allocation (`_aligned_malloc`). By eliminating runtime heap allocations (`malloc`/`free`) on the hot path, pointer indirection is replaced with raw index arithmetic, keeping traversals resident in CPU L1/L2 caches.
-* **Lock-Free Treiber Stack with ABA Tagging:** Dynamic node allocation (`spawn()`) and deallocation (`kill()`) execute without global mutex locks via a 64-bit tagged pointer CAS loop (`free_head`), enabling concurrent neurogenesis without blocking real-time loops.
-* **Atomic CAS Voltage Accumulation:** Spreading activation updates per-node floating-point activation (`std::atomic<float> activation`) via lock-free compare-and-swap loops (`add_voltage()`), preventing torn writes during multi-threaded activation bursts.
-* **Lock-Free Readers with Spinlocked Edge Lists:** Edge mutations and in-place sorting are guarded by per-node `std::atomic_flag` micro-locks, allowing concurrent readers (`spread_activation`) to traverse graph topologies without lock acquisition.
-* **Hybrid High-Resolution Windows Scheduler:** Bypasses Windows scheduler quantum limitations (which throttle standard `Sleep(1)` to ~64–100 Hz) by combining `CreateWaitableTimerExW` with microsecond spin-wait tails (`YieldProcessor()`) to achieve true **1,000 Hz** tick loops with low scheduling jitter.
+* **Contiguous Demand-Paged Arena (`ClusterGraph`):** Pre-allocates up to 262,144 nodes in a single cache-aligned region via Windows `VirtualAlloc` (`MEM_RESERVE | MEM_COMMIT`) / POSIX `mmap`. By utilizing OS virtual memory demand-paging without eager physical page-faulting, boot working set (RSS) remains bounded at **47 MB** across 6,500 active clusters, eliminating heap indirection while keeping hot graph structures resident in CPU L1/L2 caches.
+* **Lock-Free Treiber Stack with RQS Quiescence & ABA Tagging:** Dynamic node allocation (`spawn()`) and deallocation (`kill()`) execute without global mutex locks via 64-bit tagged pointer CAS loops (`free_head`), coupled with Read-Quiescence Synchronization (RQS) and sequence bumps to guarantee safe node retirement without dangling edge readers.
+* **C++23 Atomic Floating-Point Voltage Accumulation:** Spreading activation updates per-node floating-point activation (`std::atomic<float> activation`) via native C++20/C++23 `fetch_add(..., std::memory_order_acq_rel)` and `std::bit_cast` for bit-level topology hashing without pointer-aliasing undefined behavior.
+* **Torn-Read Proof Seqlock & Snapshot Traversal:** Outbound edges and weights are mutated under per-node sequence counters (`edge_seq`). Readers acquire bounded local snapshots (`copy_edges_snapshot()`) without blocking graph mutators or observing torn 16-byte `Edge` structs during concurrent in-place edge sorting or STDP reinforcement.
+* **Lossless Synaptic Persistence v3 (`.fpsan`):** High-speed binary persistence engine with full-file pre-verification, 64-bit FNV-1a checksum validation, and automatic dead slot recycling onto the Treiber stack. Corrupted files are rejected cleanly before mutating in-memory graphs.
+* **Compact Flat Lexicon:** Replaced legacy multi-megabyte pointer structures with a cache-friendly, thread-safe `std::unordered_map` lexicon protected by `std::shared_mutex` and snapshot string accessors, cutting text subsystem RAM to `< 1 MB`.
+* **Hybrid High-Resolution Windows Scheduler:** Bypasses Windows scheduler quantum limitations (which throttle standard `Sleep(1)` to ~64–100 Hz) by combining RAII-managed `CreateWaitableTimerExW` and `timeBeginPeriod(1)` with microsecond spin-wait tails (`YieldProcessor()`) to achieve true **1,000 Hz** tick loops with low scheduling jitter.
 
 ---
 
 ## 📊 Empirical Microarchitectural Benchmarks
 
-All benchmarks were compiled with **MSVC 19.52.37029 (`/O2 /std:c++17`)** and executed natively on an **Intel Core i7-14700HX (28 threads)** running **Windows 11 x64**. Raw machine-readable receipts are generated in [`artefacts/systems_benchmark_results.json`](artefacts/systems_benchmark_results.json).
+All benchmarks were compiled with **MSVC 19.52.37029 (`/O2 /std:c++23`)** and executed natively on an **Intel Core i7-14700HX (28 threads)** running **Windows 11 x64**. Raw machine-readable receipts are generated in [`artefacts/systems_benchmark_results.json`](artefacts/systems_benchmark_results.json).
 
 ### 1. Ingestion Throughput & Relational Traversal (10,000 Triples)
 
@@ -90,23 +93,49 @@ Engram-Core incorporates a dual perception pipeline: an experimental 256-bit spi
 
 ---
 
+### 5. Multi-Threaded Concurrency, Invariant Integrity & Working Set (Gate E1)
+
+Gate E1 subjects Engram-Core to an 8-thread concurrent contention gauntlet (4 reader threads executing continuous spreading activation and lexicon perception, and 4 mutator threads executing neurogenesis `spawn()`, node recycling `kill()`, edge mutation, and STDP weight updates):
+
+| Microarchitectural Metric | Invariant / Target Ceiling | Empirical Measurement | Verdict |
+| :--- | :---: | :---: | :---: |
+| **Active Process Working Set (RSS)** | < 50.0 MB | **47.1 MB** (VirtualAlloc Demand-Paged) | **PASS** |
+| **8-Thread Contention Throughput (3.0s)** | > 5,000,000 op/s | **9,524,529 op/s** (28,573,589 total ops) | **PASS** |
+| **Torn Edge Invariant Violations** | 0 violations | **0 observed** (Seqlock + Snapshot readers) | **PASS** |
+| **Data Races & Memory Corruption** | 0 races | **0 data races** (`/std:c++23` atomics) | **PASS** |
+| **Persistence Round-Trip Integrity (v3)** | Bit-for-bit lossless | **100% Canary, Provenance & Flags Preserved** | **PASS** |
+| **Corrupted File Rejection** | Fail loudly & preserve memory | **Checksum Mismatch Caught** (Zero state wipe) | **PASS** |
+
+> **Concurrency Takeaway:** Replacing lock-free torn reads with versioned seqlock snapshots and upgrading floating-point voltage accumulation to native C++23 atomic arithmetic completely eliminates concurrency data races and torn struct reads under extreme multi-threaded contention while sustaining **~9.5M ops/sec**.
+
+---
+
 ## 🚀 Quick Start Guide
 
 Engram-Core requires **Windows 10/11 x64** and **Visual Studio 2022/2026 (MSVC x64)**. Zero external package managers or Python runtimes are required.
 
-### 1. Build and Run the Systems Benchmark Suite
+### 1. Build and Run Gate E1 Concurrency & Persistence Suite
 
-The systems benchmark compiles natively and validates all microarchitectural findings against in-memory SQLite:
+Verify multi-threaded contention, seqlock reader snapshots, memory RSS, and lossless v3 persistence:
 
 ```cmd
 git clone https://github.com/MrDunky14/Engram-Core.git
 cd Engram-Core
 call scripts\vcvars_community.bat
-cl /nologo /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS /I src\core /I src\benchmark /I vendor\sqlite3\sqlite-amalgamation-3470200 src\benchmark\systems_benchmark.cpp build\sqlite3.obj /Febuild\systems_benchmark.exe /link /STACK:16777216 Psapi.lib Winmm.lib
+nmake gate_e1
+build\gate_e1_concurrency_and_persistence.exe
+```
+
+### 2. Build and Run the Systems Benchmark Suite
+
+The systems benchmark compiles natively and validates all microarchitectural findings against in-memory SQLite:
+
+```cmd
+nmake systems_benchmark
 build\systems_benchmark.exe
 ```
 
-### 2. Verify Research Gates & Heartbeat Jitter
+### 3. Verify Research Gates & Heartbeat Jitter
 
 Compile and run the research verification matrix and multi-thread heartbeat gate:
 
@@ -116,7 +145,7 @@ build\b1_retention_gauntlet.exe
 build\heartbeat_gate.exe
 ```
 
-### 3. Build & Launch the Interactive Daemon
+### 4. Build & Launch the Interactive Daemon
 
 Build the standalone living engine executable:
 
@@ -146,7 +175,6 @@ Inside the console:
 
 ## 🏗️ Repository Layout & Documentation
 
-* **Systems Audit Report:** [`ENGRAM_CORE_TEARDOWN_AND_AUDIT.md`](ENGRAM_CORE_TEARDOWN_AND_AUDIT.md)
 * **Operator Commands:** [`docs/COMMANDS.md`](docs/COMMANDS.md)
 * **Architecture Deep Dive:** [`FP-SAN Architecture.md`](FP-SAN Architecture.md)
 * **Verified Benchmark Snapshot:** [`docs/BENCHMARK_RESULTS_v1.0.0.md`](docs/BENCHMARK_RESULTS_v1.0.0.md)

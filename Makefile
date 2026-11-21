@@ -28,9 +28,13 @@ heartbeat: src/benchmark/heartbeat_gate.cpp
 	@if not exist build mkdir build
 	$(CXX) $(CXXFLAGS) src/benchmark/heartbeat_gate.cpp /Fobuild/heartbeat_gate.obj /Febuild/heartbeat_gate.exe $(STACK) $(LIBS)
 
+gate_e1: src/benchmark/gate_e1_concurrency_and_persistence.cpp
+	@if not exist build mkdir build
+	$(CXX) $(CXXFLAGS) src/benchmark/gate_e1_concurrency_and_persistence.cpp /Fobuild/gate_e1_concurrency_and_persistence.obj /Febuild/gate_e1_concurrency_and_persistence.exe $(STACK) Psapi.lib
+
 r0_baseline: src/benchmark/r0_baseline_gate.cpp
 	@if not exist build mkdir build
-	$(CXX) $(CXXFLAGS) src/benchmark/r0_baseline_gate.cpp src/core/fpsan_wasm_sandbox.cpp build/m3_*.obj /Fobuild/r0_baseline_gate.obj /Febuild/r0_baseline_gate.exe $(STACK) user32.lib
+	$(CXX) $(CXXFLAGS) src/benchmark/r0_baseline_gate.cpp src/core/fpsan_wasm_sandbox.cpp build/m3_*.obj /Fobuild/ /Febuild/r0_baseline_gate.exe $(STACK) user32.lib
 
 clean:
 	@if exist build del /Q /F build\*

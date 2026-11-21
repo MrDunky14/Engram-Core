@@ -202,9 +202,9 @@ static bool p08_lexical_hub_binds_translation_ids() {
         return false;
     fpsan::hub_link_member(&g, hub, lexical, 0.74f);
 
-    const char* lab = cx.get_word(lexical);
-    tr.bind_label(lexical, lab, &cx);
-    return lab[0] != '\0' && tr.id_for_token(lab) == lexical &&
+    std::string lab = cx.get_word(lexical);
+    tr.bind_label(lexical, lab.c_str(), &cx);
+    return !lab.empty() && tr.id_for_token(lab.c_str()) == lexical &&
            g.node(hub).edge_count.load(std::memory_order_acquire) > 0;
 }
 

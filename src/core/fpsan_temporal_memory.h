@@ -82,16 +82,20 @@ public:
 
         auto overlap_frac = [&](int epis_hub) noexcept -> float {
             const ClusterNode& hub = graph->node(epis_hub);
-            const int ec = hub.edge_count.load(std::memory_order_acquire);
+            Edge snap[MAX_FANOUT];
+            const int ec = hub.copy_edges_snapshot(snap, MAX_FANOUT);
             if (ec == 0) return 0.f;
             int members = 0;
             int hits = 0;
+            const int nc = graph->node_count.load(std::memory_order_acquire);
             for (int i = 0; i < ec; ++i) {
-                const Edge& e = hub.edges[i];
+                const Edge& e = snap[i];
                 if (e.type != EDGE_EPISODIC_LINK) continue;
                 ++members;
-                const float act = graph->node(e.target).activation.load(std::memory_order_relaxed);
-                if (act > ACTIVATION_CUTOFF) ++hits;
+                if (e.target >= 0 && e.target < nc) {
+                    const float act = graph->node(e.target).activation.load(std::memory_order_relaxed);
+                    if (act > ACTIVATION_CUTOFF) ++hits;
+                }
             }
             if (members == 0) return 0.f;
             return (float)hits / (float)members;
@@ -100,14 +104,15 @@ public:
         std::shared_lock<std::shared_mutex> lk(graph->graph_rw_lock);
 
         const ClusterNode& cue = graph->node(cue_cluster_id);
-        const int iec = cue.inverse_edge_count.load(std::memory_order_acquire);
+        Edge isnap[MAX_FANOUT];
+        const int iec = cue.copy_inverse_edges_snapshot(isnap, MAX_FANOUT);
 
         struct Cand { int epi; float overlap; };
         Cand buf[128];
         int nbuf = 0;
 
         for (int i = 0; i < iec && nbuf < 128; ++i) {
-            const Edge& ie = cue.inverse_edges[i];
+            const Edge& ie = isnap[i];
             if (ie.type != EDGE_EPISODIC_LINK) continue;
             const int epis = ie.target;
             if (epis < 0 || epis >= graph->node_count.load(std::memory_order_acquire)) continue;
@@ -129,9 +134,10 @@ public:
             graph->node(buf[k].epi).add_voltage(spike_amp * buf[k].overlap);
 
             ClusterNode& hub = graph->node(buf[k].epi);
-            const int ec = hub.edge_count.load(std::memory_order_acquire);
+            Edge hsnap[MAX_FANOUT];
+            const int ec = hub.copy_edges_snapshot(hsnap, MAX_FANOUT);
             for (int ei = 0; ei < ec; ++ei) {
-                const Edge& e = hub.edges[ei];
+                const Edge& e = hsnap[ei];
                 if (e.type != EDGE_EPISODIC_LINK) continue;
                 graph->add_voltage_to(e.target, spike_amp * buf[k].overlap * e.weight / 5.0f);
             }

@@ -30,6 +30,17 @@
 #include <memory>
 #include <bit>
 #include <array>
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <sys/mman.h>
+#endif
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif
@@ -249,7 +260,8 @@ struct alignas(64) ClusterNode {
         while (edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
 
-        edge_seq.fetch_add(1, std::memory_order_release);
+        edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_release);
 
         int ec = edge_count.load(std::memory_order_relaxed);
 
@@ -260,7 +272,8 @@ struct alignas(64) ClusterNode {
                 edges[i].co_occur_count++;
                 if (prov != PROV_UNKNOWN) edges[i].provenance = prov;
                 _sort_edges(ec);
-                edge_seq.fetch_add(1, std::memory_order_release);
+                std::atomic_thread_fence(std::memory_order_release);
+                edge_seq.fetch_add(1, std::memory_order_acq_rel);
                 edge_lock.clear(std::memory_order_release);
                 return;
             }
@@ -276,7 +289,8 @@ struct alignas(64) ClusterNode {
             }
         }
         _sort_edges(ec);
-        edge_seq.fetch_add(1, std::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
+        edge_seq.fetch_add(1, std::memory_order_acq_rel);
         edge_lock.clear(std::memory_order_release);
     }
 
@@ -284,7 +298,8 @@ struct alignas(64) ClusterNode {
         while (inverse_edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
 
-        inverse_edge_seq.fetch_add(1, std::memory_order_release);
+        inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_release);
 
         int ec = inverse_edge_count.load(std::memory_order_relaxed);
 
@@ -294,7 +309,8 @@ struct alignas(64) ClusterNode {
                 inverse_edges[i].weight  = std::min(inverse_edges[i].weight, 5.0f);
                 inverse_edges[i].co_occur_count++;
                 _sort_inv_edges(ec);
-                inverse_edge_seq.fetch_add(1, std::memory_order_release);
+                std::atomic_thread_fence(std::memory_order_release);
+                inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
                 inverse_edge_lock.clear(std::memory_order_release);
                 return;
             }
@@ -310,7 +326,8 @@ struct alignas(64) ClusterNode {
             }
         }
         _sort_inv_edges(ec);
-        inverse_edge_seq.fetch_add(1, std::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
+        inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
         inverse_edge_lock.clear(std::memory_order_release);
     }
 
@@ -326,24 +343,28 @@ struct alignas(64) ClusterNode {
     void prune() noexcept {
         while (edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
-        edge_seq.fetch_add(1, std::memory_order_release);
+        edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_release);
         int ec = edge_count.load(std::memory_order_relaxed);
         int nc = 0;
         for (int i = 0; i < ec; i++)
             if (edges[i].weight >= EDGE_PRUNE) edges[nc++] = edges[i];
         edge_count.store(nc, std::memory_order_relaxed);
-        edge_seq.fetch_add(1, std::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
+        edge_seq.fetch_add(1, std::memory_order_acq_rel);
         edge_lock.clear(std::memory_order_release);
 
         while (inverse_edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
-        inverse_edge_seq.fetch_add(1, std::memory_order_release);
+        inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_release);
         int iec = inverse_edge_count.load(std::memory_order_relaxed);
         int nic = 0;
         for (int i = 0; i < iec; i++)
             if (inverse_edges[i].weight >= EDGE_PRUNE) inverse_edges[nic++] = inverse_edges[i];
         inverse_edge_count.store(nic, std::memory_order_relaxed);
-        inverse_edge_seq.fetch_add(1, std::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
+        inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
         inverse_edge_lock.clear(std::memory_order_release);
     }
 
@@ -377,10 +398,21 @@ struct ClusterGraph {
     // ── Flat arena ──────────────────────────────────────────
     // Raw aligned storage — nodes are constructed lazily (only on spawn/init).
     // Using raw allocation avoids touching all 262K pages at boot.
-    struct RawDeleter { void operator()(void* p) const noexcept { _aligned_free(p); } };
+    struct RawDeleter {
+        void operator()(void* p) const noexcept {
+            if (p) {
+#if defined(_WIN32)
+                VirtualFree(p, 0, MEM_RELEASE);
+#else
+                munmap(p, sizeof(ClusterNode) * CORTEX_CAPACITY);
+#endif
+            }
+        }
+    };
     std::unique_ptr<void, RawDeleter> _cortex_raw;
     ClusterNode*                      cortex_memory{nullptr};
 
+    std::atomic<int> arena_alloc{0};
     std::atomic<int> node_count{0};
 
     // ── Treiber stack for lock-free neurogenesis ─────────────
@@ -420,10 +452,11 @@ struct ClusterGraph {
     ~ClusterGraph() {
         // Explicitly destroy only the constructed nodes
         if (cortex_memory) {
-            const int nc = node_count.load(std::memory_order_relaxed);
-            for (int i = 0; i < nc; i++)
-                cortex_memory[i].~ClusterNode();
-            // _cortex_raw frees the raw storage via _aligned_free
+            const int alloc = arena_alloc.load(std::memory_order_relaxed);
+            for (int i = 0; i < alloc; i++) {
+                if (cortex_memory[i].constructed.load(std::memory_order_relaxed))
+                    cortex_memory[i].~ClusterNode();
+            }
         }
     }
 
@@ -436,18 +469,24 @@ struct ClusterGraph {
     const ClusterNode& node(int id) const noexcept { return cortex_memory[id]; }
 
     // ────────────────────────────────────────────────────────
-    // init() — allocates the flat arena and builds the Treiber
+    // init() — allocates the flat demand-paged arena and builds the Treiber
     //          free stack. Must be called with unique_lock held
     //          (or before any threads start).
     // ────────────────────────────────────────────────────────
     void init(int initial_nodes = INITIAL_CLUSTERS) {
-        // ── Allocate flat arena with raw aligned storage ──────
-        // _aligned_malloc avoids default-constructing all 262144 nodes,
-        // so the OS only maps physical pages for nodes we actually touch.
-        void* raw = _aligned_malloc(sizeof(ClusterNode) * CORTEX_CAPACITY,
-                                    alignof(ClusterNode));
+        // ── Allocate flat arena via demand-paged virtual memory ──────
+        // VirtualAlloc / mmap reserves and commits address space without
+        // touching physical pages. Windows/Linux guarantee newly committed
+        // pages are zeroed upon first access without needing a 1.3 GB memset.
+#if defined(_WIN32)
+        void* raw = VirtualAlloc(nullptr, sizeof(ClusterNode) * CORTEX_CAPACITY,
+                                 MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+#else
+        void* raw = mmap(nullptr, sizeof(ClusterNode) * CORTEX_CAPACITY,
+                         PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (raw == MAP_FAILED) raw = nullptr;
+#endif
         if (!raw) throw std::bad_alloc();
-        memset(raw, 0, sizeof(ClusterNode) * CORTEX_CAPACITY);
         _cortex_raw   = std::unique_ptr<void, RawDeleter>(raw);
         cortex_memory = static_cast<ClusterNode*>(raw);
 
@@ -458,6 +497,7 @@ struct ClusterGraph {
         _bfs_visited = std::make_unique<bool[]>(CORTEX_CAPACITY);
         _bfs_queue   = std::make_unique<int[]>(CORTEX_CAPACITY);
 
+        arena_alloc.store(0, std::memory_order_relaxed);
         node_count.store(0, std::memory_order_relaxed);
         free_head.store(FREE_STACK_EMPTY, std::memory_order_relaxed);
         last_fired.store(-1, std::memory_order_relaxed);
@@ -473,6 +513,7 @@ struct ClusterGraph {
             cortex_memory[i].alive.store(true, std::memory_order_release);
             free_next[i].store(-1, std::memory_order_relaxed);
         }
+        arena_alloc.store(actual, std::memory_order_release);
         node_count.store(actual, std::memory_order_release);
     }
 
@@ -502,9 +543,9 @@ struct ClusterGraph {
         }
 
         // Stack empty: claim next slot from arena (placement-new first use)
-        int id = node_count.fetch_add(1, std::memory_order_acq_rel);
+        int id = arena_alloc.fetch_add(1, std::memory_order_acq_rel);
         if (id >= CORTEX_CAPACITY) {
-            node_count.fetch_sub(1, std::memory_order_relaxed);
+            arena_alloc.fetch_sub(1, std::memory_order_relaxed);
             return -1;
         }
         if (!cortex_memory[id].constructed.load(std::memory_order_acquire)) {
@@ -514,17 +555,46 @@ struct ClusterGraph {
         cortex_memory[id].init();
         free_next[id].store(-1, std::memory_order_relaxed);
         cortex_memory[id].alive.store(true, std::memory_order_release);
+
+        // Advance published node_count so readers observing node_count only see fully initialized slots
+        int cur = node_count.load(std::memory_order_relaxed);
+        while (cur <= id && !node_count.compare_exchange_weak(cur, id + 1, std::memory_order_release, std::memory_order_relaxed)) {}
+
         return id;
     }
 
     // ────────────────────────────────────────────────────────
-    // kill() — push node onto the Treiber stack. Lock-free.
+    // kill() — push node onto the Treiber stack. Safe node recycling
+    //          with RQS draining so active readers never observe recycled state.
     // ────────────────────────────────────────────────────────
     void kill(int id) noexcept {
         if (id < 0 || id >= CORTEX_CAPACITY) return;
-        cortex_memory[id].alive.store(false, std::memory_order_release);
-        cortex_memory[id].edge_count.store(0, std::memory_order_release);
-        cortex_memory[id].inverse_edge_count.store(0, std::memory_order_release);
+
+        ClusterNode& n = cortex_memory[id];
+        while (n.edge_lock.test_and_set(std::memory_order_acquire))
+            std::this_thread::yield();
+        while (n.inverse_edge_lock.test_and_set(std::memory_order_acquire))
+            std::this_thread::yield();
+
+        n.edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        n.inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_release);
+
+        n.alive.store(false, std::memory_order_release);
+        n.edge_count.store(0, std::memory_order_release);
+        n.inverse_edge_count.store(0, std::memory_order_release);
+
+        std::atomic_thread_fence(std::memory_order_release);
+        n.edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        n.inverse_edge_seq.fetch_add(1, std::memory_order_acq_rel);
+
+        n.inverse_edge_lock.clear(std::memory_order_release);
+        n.edge_lock.clear(std::memory_order_release);
+
+        // RQS Quiesce: Drain readers in spread_activation holding shared_lock
+        {
+            std::unique_lock<std::shared_mutex> quiesce(graph_rw_lock);
+        }
 
         uint64_t head = free_head.load(std::memory_order_acquire);
         uint64_t new_head;
@@ -843,7 +913,8 @@ struct ClusterGraph {
         ClusterNode& pre = cortex_memory[pre_id];
         while (pre.edge_lock.test_and_set(std::memory_order_acquire))
             std::this_thread::yield();
-        pre.edge_seq.fetch_add(1, std::memory_order_release);
+        pre.edge_seq.fetch_add(1, std::memory_order_acq_rel);
+        std::atomic_thread_fence(std::memory_order_release);
         int ec = pre.edge_count.load(std::memory_order_relaxed);
         for (int i = 0; i < ec; i++) {
             if (pre.edges[i].target == post_id) {
@@ -853,7 +924,8 @@ struct ClusterGraph {
                 break;
             }
         }
-        pre.edge_seq.fetch_add(1, std::memory_order_release);
+        std::atomic_thread_fence(std::memory_order_release);
+        pre.edge_seq.fetch_add(1, std::memory_order_acq_rel);
         pre.edge_lock.clear(std::memory_order_release);
     }
 

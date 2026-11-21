@@ -139,7 +139,7 @@ inline bool speaker_compose_define_is_a(
 {
     if (!graph || !cortex || !buf || buflen < 16) return false;
 
-    const char* subject_label = cortex->get_word(subject_cid);
+    std::string subject_label = cortex->get_word(subject_cid);
 
     int obj = -1;
     float scr = -1.f;
@@ -150,23 +150,22 @@ inline bool speaker_compose_define_is_a(
         return false;
     }
 
-    const char* object_label = cortex->get_word(obj);
+    std::string object_label = cortex->get_word(obj);
 
-    std::snprintf(buf, (size_t)buflen,
-                  "%s is a %s", subject_label && subject_label[0] ? subject_label : "?",
-                               object_label && object_label[0] ? object_label : "?");
+    const char* s_str = !subject_label.empty() ? subject_label.c_str() : "?";
+    const char* o_str = !object_label.empty() ? object_label.c_str() : "?";
+
+    std::snprintf(buf, (size_t)buflen, "%s is a %s", s_str, o_str);
 
     if (audit_n) *audit_n = 0;
     if (audits && audit_n && audit_cap > 0) {
-        speaker_append_audit(audits, audit_n, audit_cap,
-                             subject_label && subject_label[0] ? subject_label : "?",
+        speaker_append_audit(audits, audit_n, audit_cap, s_str,
                              subject_cid, EDGE_NEXT_WORD, PROV_USER);
         speaker_append_audit(audits, audit_n, audit_cap,
                              "is", subject_cid, EDGE_NEXT_WORD, PROV_USER);
         speaker_append_audit(audits, audit_n, audit_cap,
                              "a", subject_cid, EDGE_NEXT_WORD, PROV_USER);
-        speaker_append_audit(audits, audit_n, audit_cap,
-                             object_label && object_label[0] ? object_label : "?",
+        speaker_append_audit(audits, audit_n, audit_cap, o_str,
                              obj, EDGE_IS_A, prov);
     }
     return true;

@@ -12,6 +12,8 @@
 #include <vector>
 #include <utility>
 #include <shared_mutex>
+#include <unordered_map>
+#include <string>
 
 // Personality coloring helpers (implemented in fpsan_live_core.cpp)
 void apply_personality_coloring(ClusterGraph* graph, LanguageCortex* lang_cortex, std::vector<std::pair<int,float>>& out_boosts);
@@ -44,81 +46,51 @@ const char* pos_tag_name(POSTag t) {
 }
 
 // ============================================================
-// LAYER 1: TRIE LEXICON
-// Maps ASCII words to POS tags in ~50ns per lookup.
-// Memory: ~50-200KB depending on vocabulary size.
+// LAYER 1: UNORDERED MAP LEXICON
+// Maps lowercase ASCII words to POS tags in ~20-50ns per lookup.
+// Flat memory footprint: < 1 MB (vs 206 MB trie pool).
 // ============================================================
-struct TrieNode {
-    TrieNode* children[128]; // ASCII range
-    POSTag tag;
-    bool is_terminal;
-
-    void init() {
-        memset(children, 0, sizeof(children));
-        tag = POS_UNKNOWN;
-        is_terminal = false;
-    }
-};
-
 struct Lexicon {
-    TrieNode root;
-    TrieNode* pool;      // Pre-allocated node pool
-    int pool_size;
-    int pool_used;
-    int word_count;
+    std::unordered_map<std::string, POSTag> dict;
+    int word_count{0};
     mutable std::shared_mutex lexicon_lock;
 
-    void init(int max_nodes = 200000) {
+    void init(int = 0) {
         std::unique_lock<std::shared_mutex> lock(lexicon_lock);
-        root.init();
-        pool_size = max_nodes;
-        pool_used = 0;
+        dict.clear();
         word_count = 0;
-        pool = new TrieNode[pool_size];
-        for (int i = 0; i < pool_size; i++) pool[i].init();
     }
 
-    ~Lexicon() { /* intentionally leak for static lifetime */ }
+    ~Lexicon() = default;
 
     void destroy() {
         std::unique_lock<std::shared_mutex> lock(lexicon_lock);
-        if (pool) { delete[] pool; pool = nullptr; }
-    }
-
-    TrieNode* alloc_node() {
-        if (pool_used >= pool_size) return nullptr;
-        return &pool[pool_used++];
+        dict.clear();
+        word_count = 0;
     }
 
     // Insert a word with its POS tag
     void insert(const char* word, POSTag tag) {
-        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
-        TrieNode* cur = &root;
+        if (!word || !*word) return;
+        std::string lower;
         for (int i = 0; word[i]; i++) {
-            int c = (unsigned char)tolower(word[i]);
-            if (c < 0 || c >= 128) continue;
-            if (!cur->children[c]) {
-                cur->children[c] = alloc_node();
-                if (!cur->children[c]) return; // pool exhausted
-            }
-            cur = cur->children[c];
+            lower.push_back((char)tolower((unsigned char)word[i]));
         }
-        cur->is_terminal = true;
-        cur->tag = tag;
-        word_count++;
+        std::unique_lock<std::shared_mutex> lock(lexicon_lock);
+        dict[lower] = tag;
+        word_count = (int)dict.size();
     }
 
-    // Lookup a word's POS tag (~50ns)
+    // Lookup a word's POS tag (~20-50ns)
     POSTag lookup(const char* word) const {
-        std::shared_lock<std::shared_mutex> lock(lexicon_lock);
-        const TrieNode* cur = &root;
+        if (!word || !*word) return POS_UNKNOWN;
+        std::string lower;
         for (int i = 0; word[i]; i++) {
-            int c = (unsigned char)tolower(word[i]);
-            if (c < 0 || c >= 128) return POS_UNKNOWN;
-            if (!cur->children[c]) return POS_UNKNOWN;
-            cur = cur->children[c];
+            lower.push_back((char)tolower((unsigned char)word[i]));
         }
-        return cur->is_terminal ? cur->tag : POS_UNKNOWN;
+        std::shared_lock<std::shared_mutex> lock(lexicon_lock);
+        auto it = dict.find(lower);
+        return (it != dict.end()) ? it->second : POS_UNKNOWN;
     }
 
     // Load dictionary from CSV: "word,TAG\n"
@@ -546,10 +518,12 @@ struct NativeLexer {
                     // Temporal Momentum: Find the LAST (most recent) binding node for this subject
                     int last_b_node = -1;
                     {
-                        int subj_ec = graph->node(subj).edge_count.load(std::memory_order_acquire);
+                        Edge snap[MAX_FANOUT];
+                        int subj_ec = graph->node(subj).copy_edges_snapshot(snap, MAX_FANOUT);
                         for (int i = 0; i < subj_ec; i++) {
-                            int old_tgt = graph->node(subj).edges[i].target;
-                            if (graph->node(old_tgt).is_binding_node.load(std::memory_order_acquire)
+                            int old_tgt = snap[i].target;
+                            if (old_tgt >= 0 && old_tgt < graph->node_count.load(std::memory_order_acquire) &&
+                                graph->node(old_tgt).is_binding_node.load(std::memory_order_acquire)
                                 && old_tgt != b_node) {
                                 last_b_node = old_tgt;
                             }
@@ -683,27 +657,30 @@ struct NativeLexer {
         for (int src = 0; src < nc; src++) {
             ClusterNode& sn = graph->node(src);
             if (!sn.alive.load(std::memory_order_relaxed)) continue;
-            int ec = sn.edge_count.load(std::memory_order_relaxed);
+            Edge s_snap[MAX_FANOUT];
+            int ec = sn.copy_edges_snapshot(s_snap, MAX_FANOUT);
 
             // Collect all IS_A and HAS_A targets
             for (int i = 0; i < ec; i++) {
-                if (sn.edges[i].type != EDGE_IS_A && sn.edges[i].type != EDGE_HAS_A) continue;
-                int tgt_a = sn.edges[i].target;
-                EdgeProvenance prov_a = sn.edges[i].provenance;
+                if (s_snap[i].type != EDGE_IS_A && s_snap[i].type != EDGE_HAS_A) continue;
+                int tgt_a = s_snap[i].target;
+                if (tgt_a < 0 || tgt_a >= nc) continue;
+                EdgeProvenance prov_a = s_snap[i].provenance;
 
                 for (int j = i+1; j < ec; j++) {
-                    if (sn.edges[j].type != sn.edges[i].type) continue;
-                    int tgt_b = sn.edges[j].target;
-                    if (tgt_a == tgt_b) continue;
-                    EdgeProvenance prov_b = sn.edges[j].provenance;
+                    if (s_snap[j].type != s_snap[i].type) continue;
+                    int tgt_b = s_snap[j].target;
+                    if (tgt_b < 0 || tgt_b >= nc || tgt_a == tgt_b) continue;
+                    EdgeProvenance prov_b = s_snap[j].provenance;
 
                     // Check if tgt_a ↔ tgt_b have an ANTONYM edge
                     bool antonym_ab = false;
                     ClusterNode& ta = graph->node(tgt_a);
-                    int tec = ta.edge_count.load(std::memory_order_relaxed);
+                    Edge t_snap[MAX_FANOUT];
+                    int tec = ta.copy_edges_snapshot(t_snap, MAX_FANOUT);
                     for (int k = 0; k < tec; k++) {
-                        if (ta.edges[k].target == tgt_b &&
-                            ta.edges[k].type == EDGE_ANTONYM) {
+                        if (t_snap[k].target == tgt_b &&
+                            t_snap[k].type == EDGE_ANTONYM) {
                             antonym_ab = true; break;
                         }
                     }
@@ -711,20 +688,20 @@ struct NativeLexer {
 
                     // Contradiction found
                     found++;
-                    const char* subj_label  = lang_cortex->get_word(src);
-                    const char* obj_a_label = lang_cortex->get_word(tgt_a);
-                    const char* obj_b_label = lang_cortex->get_word(tgt_b);
+                    std::string subj_label  = lang_cortex->get_word(src);
+                    std::string obj_a_label = lang_cortex->get_word(tgt_a);
+                    std::string obj_b_label = lang_cortex->get_word(tgt_b);
                     printf("[Contradiction] '%s' IS_A '%s' AND '%s' (antonyms!) prov=%d/%d\n",
-                           subj_label ? subj_label : "?",
-                           obj_a_label ? obj_a_label : "?",
-                           obj_b_label ? obj_b_label : "?",
+                           !subj_label.empty() ? subj_label.c_str() : "?",
+                           !obj_a_label.empty() ? obj_a_label.c_str() : "?",
+                           !obj_b_label.empty() ? obj_b_label.c_str() : "?",
                            (int)prov_a, (int)prov_b);
                     if (csv)
                         fprintf(csv, "%s,%s,%s,%s,%d,%d\n",
-                                subj_label  ? subj_label  : "?",
-                                obj_a_label ? obj_a_label : "?",
-                                obj_b_label ? obj_b_label : "?",
-                                edge_type_name(sn.edges[i].type),
+                                !subj_label.empty() ? subj_label.c_str() : "?",
+                                !obj_a_label.empty() ? obj_a_label.c_str() : "?",
+                                !obj_b_label.empty() ? obj_b_label.c_str() : "?",
+                                edge_type_name(s_snap[i].type),
                                 (int)prov_a, (int)prov_b);
                 }
             }
@@ -759,9 +736,9 @@ struct NativeLexer {
         apply_personality_coloring(graph, lang_cortex, _boosts);
 
         // 1. Initial word
-        const char* word = lang_cortex->get_word(current_node);
-        if (word[0] != '\0') {
-            strcat(output_buffer, word);
+        std::string word = lang_cortex->get_word(current_node);
+        if (!word.empty()) {
+            strcat(output_buffer, word.c_str());
             word_count++;
         }
 
@@ -876,14 +853,14 @@ struct NativeLexer {
             }
 
             // Output the word
-            const char* next_word = lang_cortex->get_word(best_neighbor);
-            if (next_word[0] != '\0') {
+            std::string next_word = lang_cortex->get_word(best_neighbor);
+            if (!next_word.empty()) {
                 strcat(output_buffer, " ");
-                strcat(output_buffer, next_word);
+                strcat(output_buffer, next_word.c_str());
                 word_count++;
                 
                 // Stop gracefully at sentence-ending punctuation
-                if (strcmp(next_word, ".") == 0 || strcmp(next_word, "!") == 0 || strcmp(next_word, "?") == 0) {
+                if (next_word == "." || next_word == "!" || next_word == "?") {
                     break;
                 }
             } else {
@@ -930,6 +907,8 @@ struct NativeLexer {
                                     LanguageCortex* lang_cortex,
                                     float base_voltage = 0.8f,
                                     int max_neighbors = 3) noexcept {
+        if (!lang_cortex || !graph || !word) return 0;
+        std::shared_lock<std::shared_mutex> lk(lang_cortex->cortex_lock);
         struct Cand { int id; int dist; };
         Cand cands[32];
         int nc_lang = 0;

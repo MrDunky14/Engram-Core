@@ -35,10 +35,11 @@ inline void r0_collect_dashboard(ClusterGraph* graph, uint64_t tick,
     for (int i = 0; i < nc; ++i) {
         if (!graph->node(i).alive.load(std::memory_order_relaxed)) continue;
         out->alive_nodes++;
-        int ec = graph->node(i).edge_count.load(std::memory_order_relaxed);
+        Edge snap[MAX_FANOUT];
+        int ec = graph->node(i).copy_edges_snapshot(snap, MAX_FANOUT);
         out->total_edges += ec;
         for (int e = 0; e < ec; ++e) {
-            EdgeType ty = graph->node(i).edges[e].type;
+            EdgeType ty = snap[e].type;
             if (ty < EDGE_TYPE_COUNT) out->edge_hist[(int)ty]++;
         }
         uint8_t tier = graph->node(i).memory_tier.load(std::memory_order_relaxed);

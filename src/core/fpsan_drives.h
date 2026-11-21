@@ -298,8 +298,10 @@ struct GoalPlanner {
             if (target_id >= 0) {
                 // Check if the graph has an EDGE_IMPLEMENTED_BY for this concept
                 bool has_motor = false;
-                for (int i = 0; i < graph->node(target_id).edge_count; i++) {
-                    if (graph->node(target_id).edges[i].type == EDGE_IMPLEMENTED_BY) {
+                Edge snap[MAX_FANOUT];
+                int ec = graph->node(target_id).copy_edges_snapshot(snap, MAX_FANOUT);
+                for (int i = 0; i < ec; i++) {
+                    if (snap[i].type == EDGE_IMPLEMENTED_BY) {
                         has_motor = true;
                         break;
                     }
@@ -325,8 +327,10 @@ struct GoalPlanner {
                 int cid = find_word(tokens[i].text);
                 if (cid >= 0) {
                     bool has_motor = false;
-                    for (int j = 0; j < graph->node(cid).edge_count; j++) {
-                        if (graph->node(cid).edges[j].type == EDGE_IMPLEMENTED_BY) {
+                    Edge snap[MAX_FANOUT];
+                    int ec = graph->node(cid).copy_edges_snapshot(snap, MAX_FANOUT);
+                    for (int j = 0; j < ec; j++) {
+                        if (snap[j].type == EDGE_IMPLEMENTED_BY) {
                             has_motor = true;
                             break;
                         }
