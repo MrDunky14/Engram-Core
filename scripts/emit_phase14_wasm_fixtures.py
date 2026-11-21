@@ -20,6 +20,20 @@ def leb128_u(n: int) -> bytes:
     return bytes(out)
 
 
+def leb128_s(n: int) -> bytes:
+    out = bytearray()
+    more = True
+    while more:
+        byte = n & 0x7F
+        n >>= 7
+        if (n == 0 and (byte & 0x40) == 0) or (n == -1 and (byte & 0x40) != 0):
+            more = False
+        else:
+            byte |= 0x80
+        out.append(byte)
+    return bytes(out)
+
+
 def vec(elems: list[bytes]) -> bytes:
     body = b"".join(elems)
     return leb128_u(len(elems)) + body
@@ -45,8 +59,8 @@ def emit_hello_sensor_const(path: str, const_val: int) -> None:
     export_entry = name("sensor_read") + bytes([0x00, 0x00])
     export_sec = vec([export_entry])
 
-    # Func body (no locals) : i32.const <imm> ; end
-    expr = bytes([0x41]) + leb128_u(const_val & 0xFFFFFFFF) + bytes([0x0B])
+    # Func body (no locals): locals_vec_len=0 (0x00); i32.const <imm> (sleb128) ; end
+    expr = bytes([0x00, 0x41]) + leb128_s(const_val) + bytes([0x0B])
     func_body = leb128_u(len(expr)) + expr
     code_sec = vec([func_body])
 
@@ -71,8 +85,8 @@ def emit_runaway_hostgate(path: str) -> None:
     export_ent = name("_start") + bytes([0x00, 0x01])
     export_sec = vec([export_ent])
 
-    # loop {}; call 0; br 0; end ; end — extra trailing end for function??
-    expr = bytes([0x03, 0x40, 0x10, 0x00, 0x0C, 0x00, 0x0B, 0x0B])
+    # Func body: locals_vec_len=0 (0x00); loop {}; call 0; br 0; end ; end
+    expr = bytes([0x00, 0x03, 0x40, 0x10, 0x00, 0x0C, 0x00, 0x0B, 0x0B])
     func_body = leb128_u(len(expr)) + expr
     code_sec = vec([func_body])
 

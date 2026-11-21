@@ -37,7 +37,6 @@ static m3ApiRawFunction(fpsan_host_gate_pulse_raw) {
 }
 
 void WasmSandbox::teardown() noexcept {
-    trap_ = nullptr;
     // Free runtime first — it retains raw import userdata until destroyed.
     if (rt_) {
         m3_FreeRuntime(static_cast<IM3Runtime>(rt_));
@@ -56,6 +55,7 @@ void WasmSandbox::teardown() noexcept {
 
 bool WasmSandbox::load(const uint8_t* wasm, size_t len, const WasmSandboxBudget& b) {
     teardown();
+    trap_ = nullptr;
 
     wasm_copy_.assign(wasm, wasm + len);
     budget_ = b;

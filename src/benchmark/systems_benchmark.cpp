@@ -9,7 +9,7 @@
 //      timeBeginPeriod(1), CreateWaitableTimerEx, and Hybrid High-Res + Spinwait.
 //   4. Perception Bottleneck: O(N) 256-dim Hamming scan vs. Direct Hash Index.
 //
-// Compiler: cl /std:c++17 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS
+// Compiler: cl /std:c++23 /O2 /EHsc /D_CRT_SECURE_NO_WARNINGS
 // ==============================================================================
 
 #define WIN32_LEAN_AND_MEAN
@@ -63,6 +63,70 @@ static void calculate_latencies(std::vector<double>& lats, double& mean, double&
     p95 = lats[static_cast<size_t>(lats.size() * 0.95)];
     p99 = lats[static_cast<size_t>(lats.size() * 0.99)];
     worst = lats.back();
+}
+
+struct BenchmarkReceipts {
+    int triples = 10000;
+    // Part 1
+    double engram_ingest_ms = 0, engram_ops = 0, ep50_1 = 0, ep50_2 = 0, ep99_2 = 0;
+    double flat_ingest_ms = 0, flat_ops = 0, fp50_1 = 0, fp50_2 = 0, fp99_2 = 0;
+    double hash_ingest_ms = 0, hash_ops = 0, hp50_1 = 0, hp50_2 = 0, hp99_2 = 0;
+    double sqlite_ingest_ms = 0, sqlite_ops = 0, sp50_1 = 0, sp50_2 = 0, sp99_2 = 0;
+    // Part 2
+    struct DepthRow { int depth; int nodes; double p50_ns; double ns_per_node; };
+    std::vector<DepthRow> depths;
+    // Part 3
+    struct TimerRow { std::string name; double mean_us; double p50_us; double p99_us; double hz; };
+    std::vector<TimerRow> timers;
+    // Part 4
+    double lex_linear_mean_us = 0, lex_linear_p50_us = 0, lex_linear_p99_us = 0, lex_linear_ops = 0;
+    double lex_hash_mean_ns = 0, lex_hash_p50_ns = 0, lex_hash_p99_ns = 0, lex_hash_ops = 0;
+} g_receipts;
+
+static void save_receipts_json(const BenchmarkReceipts& r) {
+    std::filesystem::create_directories("artefacts");
+    FILE* fp = fopen("artefacts/systems_benchmark_results.json", "w");
+    if (!fp) return;
+    fprintf(fp, "{\n");
+    fprintf(fp, "  \"hardware\": {\n");
+    fprintf(fp, "    \"cpu\": \"Intel Core i7-14700HX (28 threads)\",\n");
+    fprintf(fp, "    \"os\": \"Windows 11 x64\",\n");
+    fprintf(fp, "    \"compiler\": \"MSVC 19.52.37029 (/O2 /std:c++23)\",\n");
+    fprintf(fp, "    \"sqlite\": \"3.47.2\"\n");
+    fprintf(fp, "  },\n");
+    fprintf(fp, "  \"part1_graph_benchmarks\": {\n");
+    fprintf(fp, "    \"triples\": %d,\n", r.triples);
+    fprintf(fp, "    \"engram_cluster_graph\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f },\n",
+            r.engram_ingest_ms, r.engram_ops, r.ep50_1, r.ep50_2, r.ep99_2);
+    fprintf(fp, "    \"flat_graph_csr\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f },\n",
+            r.flat_ingest_ms, r.flat_ops, r.fp50_1, r.fp50_2, r.fp99_2);
+    fprintf(fp, "    \"unordered_map\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f },\n",
+            r.hash_ingest_ms, r.hash_ops, r.hp50_1, r.hp50_2, r.hp99_2);
+    fprintf(fp, "    \"sqlite3_in_memory\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f }\n",
+            r.sqlite_ingest_ms, r.sqlite_ops, r.sp50_1, r.sp50_2, r.sp99_2);
+    fprintf(fp, "  },\n");
+    fprintf(fp, "  \"part2_spreading_activation\": [\n");
+    for (size_t i = 0; i < r.depths.size(); ++i) {
+        const auto& d = r.depths[i];
+        fprintf(fp, "    { \"depth\": %d, \"active_nodes\": %d, \"p50_ns\": %.1f, \"ns_per_node\": %.2f }%s\n",
+                d.depth, d.nodes, d.p50_ns, d.ns_per_node, (i + 1 == r.depths.size()) ? "" : ",");
+    }
+    fprintf(fp, "  ],\n");
+    fprintf(fp, "  \"part3_windows_timer\": [\n");
+    for (size_t i = 0; i < r.timers.size(); ++i) {
+        const auto& t = r.timers[i];
+        fprintf(fp, "    { \"strategy\": \"%s\", \"mean_us\": %.1f, \"p50_us\": %.1f, \"p99_us\": %.1f, \"hz\": %.1f }%s\n",
+                t.name.c_str(), t.mean_us, t.p50_us, t.p99_us, t.hz, (i + 1 == r.timers.size()) ? "" : ",");
+    }
+    fprintf(fp, "  ],\n");
+    fprintf(fp, "  \"part4_perception\": {\n");
+    fprintf(fp, "    \"linear_scan\": { \"mean_us\": %.1f, \"p50_us\": %.1f, \"p99_us\": %.1f, \"throughput_words_s\": %.0f },\n",
+            r.lex_linear_mean_us, r.lex_linear_p50_us, r.lex_linear_p99_us, r.lex_linear_ops);
+    fprintf(fp, "    \"direct_hash\": { \"mean_ns\": %.1f, \"p50_ns\": %.1f, \"p99_ns\": %.1f, \"throughput_words_s\": %.0f }\n",
+            r.lex_hash_mean_ns, r.lex_hash_p50_ns, r.lex_hash_p99_ns, r.lex_hash_ops);
+    fprintf(fp, "  }\n");
+    fprintf(fp, "}\n");
+    fclose(fp);
 }
 
 // ------------------------------------------------------------------------------
@@ -389,30 +453,31 @@ void benchmark_graph_engines(int num_triples) {
            "SQLite3 (:memory:)", sqlite_ingest_ms, (num_triples * 2.0 / (sqlite_ingest_ms / 1000.0)), sp50_1, sp50_2, sp99_2);
     printf("----------------------------------------------------------------------------------------------------\n");
 
-    // Write JSON results to artefacts/systems_benchmark_results.json
-    std::filesystem::create_directories("artefacts");
-    FILE* fp = fopen("artefacts/systems_benchmark_results.json", "w");
-    if (fp) {
-        fprintf(fp, "{\n");
-        fprintf(fp, "  \"hardware\": {\n");
-        fprintf(fp, "    \"cpu\": \"Intel Core i7-14700HX (28 threads)\",\n");
-        fprintf(fp, "    \"os\": \"Windows 11 x64\",\n");
-        fprintf(fp, "    \"compiler\": \"MSVC 19.52.37029 (/O2 /std:c++17)\"\n");
-        fprintf(fp, "  },\n");
-        fprintf(fp, "  \"part1_graph_benchmarks\": {\n");
-        fprintf(fp, "    \"triples\": %d,\n", num_triples);
-        fprintf(fp, "    \"engram_cluster_graph\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f },\n",
-                engram_ingest_ms, (num_triples * 2.0 / (engram_ingest_ms / 1000.0)), ep50_1, ep50_2, ep99_2);
-        fprintf(fp, "    \"flat_graph_csr\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f },\n",
-                flat_ingest_ms, (num_triples * 2.0 / (flat_ingest_ms / 1000.0)), fp50_1, fp50_2, fp99_2);
-        fprintf(fp, "    \"unordered_map\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f },\n",
-                hash_ingest_ms, (num_triples * 2.0 / (hash_ingest_ms / 1000.0)), hp50_1, hp50_2, hp99_2);
-        fprintf(fp, "    \"sqlite3_in_memory\": { \"ingest_ms\": %.2f, \"throughput_ops\": %.0f, \"1hop_p50_ns\": %.1f, \"2hop_p50_ns\": %.1f, \"2hop_p99_ns\": %.1f }\n",
-                sqlite_ingest_ms, (num_triples * 2.0 / (sqlite_ingest_ms / 1000.0)), sp50_1, sp50_2, sp99_2);
-        fprintf(fp, "  }\n");
-        fprintf(fp, "}\n");
-        fclose(fp);
-    }
+    // Record receipts for JSON export
+    g_receipts.triples = num_triples;
+    g_receipts.engram_ingest_ms = engram_ingest_ms;
+    g_receipts.engram_ops = (num_triples * 2.0 / (engram_ingest_ms / 1000.0));
+    g_receipts.ep50_1 = ep50_1;
+    g_receipts.ep50_2 = ep50_2;
+    g_receipts.ep99_2 = ep99_2;
+
+    g_receipts.flat_ingest_ms = flat_ingest_ms;
+    g_receipts.flat_ops = (num_triples * 2.0 / (flat_ingest_ms / 1000.0));
+    g_receipts.fp50_1 = fp50_1;
+    g_receipts.fp50_2 = fp50_2;
+    g_receipts.fp99_2 = fp99_2;
+
+    g_receipts.hash_ingest_ms = hash_ingest_ms;
+    g_receipts.hash_ops = (num_triples * 2.0 / (hash_ingest_ms / 1000.0));
+    g_receipts.hp50_1 = hp50_1;
+    g_receipts.hp50_2 = hp50_2;
+    g_receipts.hp99_2 = hp99_2;
+
+    g_receipts.sqlite_ingest_ms = sqlite_ingest_ms;
+    g_receipts.sqlite_ops = (num_triples * 2.0 / (sqlite_ingest_ms / 1000.0));
+    g_receipts.sp50_1 = sp50_1;
+    g_receipts.sp50_2 = sp50_2;
+    g_receipts.sp99_2 = sp99_2;
 
     double speedup_engram_vs_sqlite = sp50_2 / ep50_2;
     printf("[Finding] Engram ClusterGraph 2-hop lookup (%.1f ns) is %.1fx faster than SQLite in-memory (%.1f ns).\n",
@@ -465,6 +530,7 @@ void benchmark_spreading_activation() {
         double mean, p50, p95, p99, worst;
         calculate_latencies(lats, mean, p50, p95, p99, worst);
         double ns_per_node = total_activated > 0 ? p50 / total_activated : 0.0;
+        g_receipts.depths.push_back({max_depth, total_activated, p50, ns_per_node});
         printf("Depth %-4d | %-15d | %12.1f ns | %12.2f ns\n",
                max_depth, total_activated, p50, ns_per_node);
     }
@@ -569,6 +635,11 @@ void benchmark_timer_jitter() {
     double m4, p50_4, p95_4, p99_4, w4;
     calculate_latencies(hybrid_ticks_us, m4, p50_4, p95_4, p99_4, w4);
 
+    g_receipts.timers.push_back({"1. Default Sleep(1)", m1, p50_1, p99_1, hz_1});
+    g_receipts.timers.push_back({"2. timeBeginPeriod(1) + Sleep(1)", m2, p50_2, p99_2, hz_2});
+    g_receipts.timers.push_back({"3. High-Resolution Waitable Timer", m3, p50_3, p99_3, hz_3});
+    g_receipts.timers.push_back({"4. Hybrid Timer + Spin-Wait Tail", m4, p50_4, p99_4, hz_4});
+
     printf("%-35s | %-12s | %-12s | %-12s | %-12s\n",
            "Scheduling Strategy", "Mean Tick", "p50 Tick", "p99 Tick", "Effective Rate");
     printf("----------------------------------------------------------------------------------------------------\n");
@@ -646,6 +717,16 @@ void benchmark_perception() {
     double hm, hp50, hp95, hp99, hw;
     calculate_latencies(hash_lats_ns, hm, hp50, hp95, hp99, hw);
 
+    g_receipts.lex_linear_mean_us = pm;
+    g_receipts.lex_linear_p50_us  = pp50;
+    g_receipts.lex_linear_p99_us  = pp99;
+    g_receipts.lex_linear_ops     = 1000000.0 / pm;
+
+    g_receipts.lex_hash_mean_ns   = hm;
+    g_receipts.lex_hash_p50_ns    = hp50;
+    g_receipts.lex_hash_p99_ns    = hp99;
+    g_receipts.lex_hash_ops       = 1000000000.0 / hm;
+
     printf("%-35s | %-12s | %-12s | %-12s | %-12s\n",
            "Perception Mechanism", "Mean", "p50", "p99", "Throughput");
     printf("----------------------------------------------------------------------------------------------------\n");
@@ -664,13 +745,16 @@ int main() {
     printf("================================================================================\n");
     printf(" ENGRAM-CORE SYSTEMS MICROARCHITECTURAL BENCHMARK HARNESS\n");
     printf(" Host CPU: Intel Core i7-14700HX (28 threads) | OS: Windows 11 x64\n");
-    printf(" Compiler: MSVC 19.52.37029 (/O2 /std:c++17) | SQLite: 3.47.2\n");
+    printf(" Compiler: MSVC 19.52.37029 (/O2 /std:c++23) | SQLite: 3.47.2\n");
     printf("================================================================================\n\n");
 
     benchmark_graph_engines(10000);
     benchmark_spreading_activation();
     benchmark_timer_jitter();
     benchmark_perception();
+
+    save_receipts_json(g_receipts);
+    printf(" [Receipts] Exported complete empirical measurements to artefacts/systems_benchmark_results.json\n\n");
 
     printf("================================================================================\n");
     printf(" ALL SYSTEMS BENCHMARKS COMPLETE. RESULTS VERIFIED.\n");

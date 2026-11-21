@@ -15,8 +15,8 @@
 //      SynapticMemory::sleep/init    -> unique_lock (exclusive).
 //   5. Edge micro-lock: atomic_flag spinlock per node.
 //      add_edge sorts in place under spinlock; readers are lock-free.
-//   6. Lock-free neurogenesis: Treiber stack with ABA-tagged uint64 CAS.
-//      spawn()/kill() never block the 1 kHz cognitive loop.
+//   6. Neurogenesis & Reclamation: Treiber stack with ABA-tagged uint64 CAS.
+//      spawn() is lock-free; kill() uses RQS reader-quiescence drain on graph_rw_lock.
 // ============================================================
 
 #include <cstdint>
@@ -564,8 +564,10 @@ struct ClusterGraph {
     }
 
     // ────────────────────────────────────────────────────────
-    // kill() — push node onto the Treiber stack. Safe node recycling
-    //          with RQS draining so active readers never observe recycled state.
+    // kill() — push node onto the Treiber stack with RQS draining
+    //          so active readers never observe recycled state.
+    // PRECONDITION: Caller must NOT hold any lock on graph_rw_lock,
+    // as kill() acquires unique_lock<shared_mutex>(graph_rw_lock) to quiesce.
     // ────────────────────────────────────────────────────────
     void kill(int id) noexcept {
         if (id < 0 || id >= CORTEX_CAPACITY) return;
